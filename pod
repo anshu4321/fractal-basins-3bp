@@ -1,0 +1,210 @@
+#!/usr/bin/env bash
+# pod: unified RunPod remote helper.
+#
+# Solves the RunPod PTY quirk by using the right tool for each job:
+#   - runpodctl send/receive (croc peer-to-peer) for binary file transfer
+#   - ssh -tt (PTY) + sentinel-framed extraction for text command execution
+#
+# Usage:
+#   pod run '<cmd>'                       run cmd on pod, stream stdout+stderr
+#   pod send <local> [<local2>...]        send files/dirs → /workspace/sair/
+#   pod send-to <remote_dir> <local>...   send to a specific remote directory
+#   pod recv <remote_path> [<local_dir>]  fetch a remote file/dir (default: cwd)
+#   pod py <script.py>                    upload + run a local python script
+#   pod ls [<remote_dir>]                 ls -la on remote dir (default /workspace/sair)
+#   pod info                              show pod GPU/CPU/RAM summary
+#   pod ssh                                open interactive ssh session
+set -euo pipefail
+
+SSH_HOST="uhdqv2ybd42k49-6441219d@ssh.runpod.io"
+SSH_KEY="$HOME/.ssh/id_ed25519"
+DEFAULT_REMOTE_DIR="/workspace/3bp"
+
+RUNPODCTL="$(command -v runpodctl || echo "$HOME/bin/runpodctl")"
+[[ -x "$RUNPODCTL" ]] || { echo "error: runpodctl not found at $RUNPODCTL" >&2; exit 1; }
+
+_ssh() {
+  ssh -tt -o StrictHostKeyChecking=no -o LogLevel=ERROR \
+      -o ConnectTimeout=30 -o ServerAliveInterval=30 \
+      -i "$SSH_KEY" "$SSH_HOST" "$@"
+}
+
+# _clean: strip every class of PTY cruft from remote output.
+_clean() {
+  tr -d '\r' \
+    | sed -E '
+        s/\x1b\[[0-9;?]*[a-zA-Z]//g
+        s/\x1b\][^\x07\x1b]*(\x07|\x1b\\)//g
+        s/^\][0-9]+;[^#$]*[#$] *//
+        s/\]0;[^]]*\x07//g
+      ' \
+    | sed -E '/^\]0;/d; /^root@[a-f0-9]+:.*[#$][[:space:]]*$/d'
+}
+
+# pod_ssh_run: run a (possibly multi-line) command on the pod. The command is
+# base64-encoded so the PTY only sees ONE stdin line, then decoded & executed
+# by `bash -c` remotely. Output is framed with sentinels for clean extraction.
+pod_ssh_run() {
+  local cmd="$1"
+  local tmp b64
+  tmp=$(mktemp)
+  b64=$(printf '%s' "$cmd" | base64 | tr -d '\n')
+
+  # Single-line remote script: stty -echo; begin marker; decode+run; exit marker.
+  printf 'stty -echo 2>/dev/null; exec 2>&1; echo __POD_BEGIN__; bash -c "$(echo %s | base64 -d)"; __POD_RC=$?; echo; echo __POD_EXIT__${__POD_RC}__\nexit\n' \
+         "$b64" \
+    | _ssh > "$tmp" 2>&1 || true
+
+  _clean < "$tmp" \
+    | awk '
+        /^__POD_BEGIN__[[:space:]]*$/ { capturing=1; next }
+        /^__POD_EXIT__[0-9]+__[[:space:]]*$/ { exit }
+        capturing { print }
+      '
+
+  local rc
+  rc=$(tr -d '\r' < "$tmp" | grep -oE '^__POD_EXIT__[0-9]+__$' | tail -1 | grep -oE '[0-9]+' || echo 1)
+  rm -f "$tmp"
+  return "${rc:-1}"
+}
+
+# pod_ssh_stream: stream output live (e.g. long-running commands, interactive
+# tools like runpodctl receive progress bars). Uses a BEGIN marker to skip the
+# login banner but does not frame an exit code (command must not care).
+pod_ssh_stream() {
+  local cmd="$1"
+  local b64
+  b64=$(printf '%s' "$cmd" | base64 | tr -d '\n')
+  printf 'stty -echo 2>/dev/null; exec 2>&1; echo __POD_BEGIN__; bash -c "$(echo %s | base64 -d)"\nexit\n' "$b64" \
+    | _ssh 2>&1 \
+    | _clean \
+    | awk '
+        /^__POD_BEGIN__[[:space:]]*$/ { capturing=1; next }
+        /^exit[[:space:]]*$/ { if (capturing) exit }
+        /^Connection to .* closed/ { if (capturing) exit }
+        capturing { print }
+      '
+}
+
+# --- File transfer via runpodctl/croc ---------------------------------------
+pod_send() {
+  local remote_dir="$1"; shift
+  [[ $# -gt 0 ]] || { echo "usage: pod send [-to <dir>] <local>..." >&2; return 2; }
+  pod_ssh_run "mkdir -p '$remote_dir'" >/dev/null
+
+  for src in "$@"; do
+    [[ -e "$src" ]] || { echo "error: local path does not exist: $src" >&2; return 1; }
+    local base size
+    base=$(basename "$src")
+    size=$(du -sh "$src" 2>/dev/null | cut -f1)
+    echo "→ sending $src ($size) → $remote_dir/$base"
+
+    local log
+    log=$(mktemp)
+    ( "$RUNPODCTL" send "$src" > "$log" 2>&1 ) &
+    local send_pid=$!
+
+    # Wait for the code to appear.
+    local code=""
+    for _ in $(seq 1 60); do
+      if grep -q "code is:" "$log" 2>/dev/null; then
+        code=$(grep "code is:" "$log" | head -1 | sed -E 's/.*code is: *//' | tr -d '\r\n ')
+        break
+      fi
+      kill -0 "$send_pid" 2>/dev/null || {
+        echo "error: runpodctl send exited before printing code:" >&2
+        cat "$log" >&2; rm -f "$log"; return 1; }
+      sleep 0.5
+    done
+    [[ -n "$code" ]] || { echo "error: timeout waiting for code" >&2; kill "$send_pid" 2>/dev/null; rm -f "$log"; return 1; }
+    echo "  code: $code"
+
+    # Have the pod receive.
+    pod_ssh_stream "cd '$remote_dir' && runpodctl receive $code" || {
+      kill "$send_pid" 2>/dev/null; rm -f "$log"; return 1; }
+    wait "$send_pid" 2>/dev/null || true
+    rm -f "$log"
+    echo "  ✓ $base"
+  done
+}
+
+pod_recv() {
+  local remote_path="$1"
+  local local_dir="${2:-.}"
+  [[ -n "$remote_path" ]] || { echo "usage: pod recv <remote_path> [<local_dir>]" >&2; return 2; }
+  mkdir -p "$local_dir"
+  echo "→ receiving $remote_path → $local_dir/"
+
+  # Start remote send, tee its stdout into a temp file so we can extract the code.
+  local log
+  log=$(mktemp)
+  (
+    pod_ssh_stream "runpodctl send $remote_path" > "$log" 2>&1
+  ) &
+  local remote_pid=$!
+
+  local code=""
+  for _ in $(seq 1 60); do
+    if grep -q "code is:" "$log" 2>/dev/null; then
+      code=$(grep "code is:" "$log" | head -1 | sed -E 's/.*code is: *//' | tr -d '\r\n ')
+      break
+    fi
+    kill -0 "$remote_pid" 2>/dev/null || { echo "error: remote send died" >&2; cat "$log" >&2; rm -f "$log"; return 1; }
+    sleep 0.5
+  done
+  [[ -n "$code" ]] || { echo "error: timeout waiting for code" >&2; kill "$remote_pid" 2>/dev/null; rm -f "$log"; return 1; }
+  echo "  code: $code"
+
+  ( cd "$local_dir" && "$RUNPODCTL" receive "$code" )
+  local rc=$?
+  wait "$remote_pid" 2>/dev/null || true
+  rm -f "$log"
+  return "$rc"
+}
+
+pod_ls() {
+  pod_ssh_run "ls -la '${1:-$DEFAULT_REMOTE_DIR}'"
+}
+
+pod_info() {
+  pod_ssh_run "
+    echo '=== GPU ==='
+    nvidia-smi --query-gpu=name,memory.total,memory.free,utilization.gpu --format=csv
+    echo
+    echo '=== CPU/RAM ==='
+    echo \"cores: \$(nproc)\"
+    free -h | head -2
+    echo
+    echo '=== disk ==='
+    df -h / /workspace 2>/dev/null
+    echo
+    echo '=== python ==='
+    python3 --version
+    pip3 list 2>/dev/null | grep -iE '^(numpy|scipy|torch|transformers|vllm|accelerate)'
+  "
+}
+
+pod_py() {
+  local script="$1"
+  [[ -f "$script" ]] || { echo "error: no such file: $script" >&2; return 1; }
+  pod_send "$DEFAULT_REMOTE_DIR" "$script" >/dev/null
+  local name
+  name=$(basename "$script")
+  pod_ssh_stream "cd $DEFAULT_REMOTE_DIR && python3 '$name'"
+}
+
+case "${1:-}" in
+  run)     shift; pod_ssh_run "$*" ;;
+  stream)  shift; pod_ssh_stream "$*" ;;
+  send)    shift
+           if [[ "${1:-}" == "-to" ]]; then shift; r="$1"; shift; pod_send "$r" "$@"
+           else pod_send "$DEFAULT_REMOTE_DIR" "$@"; fi ;;
+  send-to) shift; r="$1"; shift; pod_send "$r" "$@" ;;
+  recv)    shift; pod_recv "$@" ;;
+  ls)      shift; pod_ls "$@" ;;
+  info)    pod_info ;;
+  py)      shift; pod_py "$@" ;;
+  ssh)     shift; _ssh "$@" ;;
+  ''|-h|--help|help) sed -n '2,20p' "$0" ;;
+  *)       echo "unknown subcommand: ${1}" >&2; exit 2 ;;
+esac
