@@ -20,7 +20,7 @@
 #   pod ssh                                open interactive ssh session
 set -euo pipefail
 
-SSH_HOST="uhdqv2ybd42k49-6441219d@ssh.runpod.io"
+SSH_HOST="eejgq6ybxfk05y-64412168@ssh.runpod.io"
 SSH_KEY="$HOME/.ssh/id_ed25519"
 DEFAULT_REMOTE_DIR="/workspace/3bp"
 
