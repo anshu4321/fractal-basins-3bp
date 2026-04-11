@@ -12,9 +12,12 @@ data/
 *.parquet
 *.npy
 *.npz
+*.mp4
+*.gif
 wandb/
 
 .gpd/
+.claude/
 
 .DS_Store
 .vscode/

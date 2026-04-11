@@ -31,11 +31,13 @@ import numpy as np
 from mega3bp.dynamics import total_energy
 from mega3bp.integrators import yoshida6_integrate_energy_only
 from mega3bp.orbits import FIGURE_EIGHT_PERIOD, figure_eight_state
+from mega3bp.style import PALETTE, apply_dirac_style
 
 GATE = 1e-10
 
 
 def main() -> int:
+    apply_dirac_style()
     print(f"jax backend : {jax.default_backend()}")
     print(f"devices     : {jax.devices()}")
     print()
@@ -74,18 +76,19 @@ def main() -> int:
     plot_y = np.where(abs_rel > floor, abs_rel, floor)
 
     fig, ax = plt.subplots(figsize=(9, 5), dpi=150)
-    ax.semilogy(t_in_periods, plot_y, lw=0.6, color="C0", alpha=0.85)
-    ax.axhline(GATE, color="C3", ls="--", lw=1.2, label=f"gate = {GATE:.0e}")
+    ax.semilogy(t_in_periods, plot_y, lw=0.55, color=PALETTE["cyan"], alpha=0.92)
+    ax.axhline(GATE, color=PALETTE["coral"], ls="--", lw=1.3, label=f"gate = {GATE:.0e}")
     ax.set_xlabel("time / figure-eight period $T$")
     ax.set_ylabel(r"$|\Delta E / E|$")
     ax.set_title(
-        "Chenciner-Montgomery figure-eight: energy conservation\n"
-        rf"Yoshida 6th-order symplectic, $h = {h}$, $N = {n_steps:,}$ steps"
+        "Chenciner-Montgomery figure-eight — energy conservation\n"
+        rf"Yoshida 6th-order symplectic,  $h = {h}$,  $N = {n_steps:,}$ steps"
     )
     ax.set_xlim(0, n_periods)
     ax.set_ylim(1e-17, 1e-8)
-    ax.grid(True, which="both", alpha=0.25)
-    ax.legend(loc="upper right")
+    ax.grid(True, which="both", alpha=0.6)
+
+    leg = ax.legend(loc="upper right")
 
     max_rel = float(abs_rel.max())
     ax.text(
@@ -96,11 +99,16 @@ def main() -> int:
         va="top",
         ha="left",
         fontsize=10,
-        bbox=dict(boxstyle="round,pad=0.3", facecolor="white", edgecolor="0.7"),
+        color=PALETTE["text"],
+        bbox=dict(
+            boxstyle="round,pad=0.4",
+            facecolor=PALETTE["bg_elevate"],
+            edgecolor=PALETTE["spine"],
+        ),
     )
 
     fig.tight_layout()
-    fig.savefig(out_fig / "figure_eight_energy.png")
+    fig.savefig(out_fig / "figure_eight_energy.png", facecolor=PALETTE["bg_deep"])
     print(f"saved {out_fig / 'figure_eight_energy.png'}")
     return 0
 

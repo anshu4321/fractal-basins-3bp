@@ -31,6 +31,14 @@ if [[ "$(runpodctl -v 2>/dev/null | awk '{print $2}' | cut -d- -f1 || true)" != 
     fi
 fi
 
+echo "=== installing ffmpeg (for matplotlib animation mp4) ==="
+if ! command -v ffmpeg >/dev/null 2>&1; then
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get update -qq >/dev/null && apt-get install -yqq ffmpeg >/dev/null && echo "  installed: $(ffmpeg -version 2>/dev/null | head -1)"
+else
+    echo "  already present: $(ffmpeg -version 2>/dev/null | head -1)"
+fi
+
 echo "=== creating venv ==="
 if [[ ! -x venv/bin/python ]]; then
     python3 -m venv venv
