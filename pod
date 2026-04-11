@@ -10,6 +10,10 @@
 #   pod send <local> [<local2>...]        send files/dirs → /workspace/sair/
 #   pod send-to <remote_dir> <local>...   send to a specific remote directory
 #   pod recv <remote_path> [<local_dir>]  fetch a remote file/dir (default: cwd)
+#                                          via runpodctl/croc; needs runpodctl 2.x on the pod
+#   pod fetch <remote_path> [<local>]     fetch a small remote file via base64-over-SSH;
+#                                          faster than recv for files <50 MB and works with
+#                                          any pod-side runpodctl version
 #   pod py <script.py>                    upload + run a local python script
 #   pod ls [<remote_dir>]                 ls -la on remote dir (default /workspace/sair)
 #   pod info                              show pod GPU/CPU/RAM summary
@@ -162,6 +166,31 @@ pod_recv() {
   return "$rc"
 }
 
+pod_fetch() {
+  local remote="$1"
+  local local_path="${2:-$(basename "$remote")}"
+  [[ -n "$remote" ]] || { echo "usage: pod fetch <remote_path> [<local_path>]" >&2; return 2; }
+  echo "→ fetching $remote → $local_path  (base64-over-SSH)"
+  local tmp
+  tmp=$(mktemp)
+  if ! pod_ssh_run "test -f '$remote' && base64 '$remote'" > "$tmp" 2>&1; then
+    echo "error: remote file not found or base64 failed:" >&2
+    cat "$tmp" >&2
+    rm -f "$tmp"
+    return 1
+  fi
+  # Decode (base64 -D ignores whitespace, blank lines, and trailing junk)
+  if ! base64 -D < "$tmp" > "$local_path" 2>/dev/null; then
+    echo "error: base64 decode failed" >&2
+    rm -f "$tmp"
+    return 1
+  fi
+  rm -f "$tmp"
+  local size
+  size=$(du -sh "$local_path" 2>/dev/null | cut -f1)
+  echo "  ✓ $local_path ($size)"
+}
+
 pod_ls() {
   pod_ssh_run "ls -la '${1:-$DEFAULT_REMOTE_DIR}'"
 }
@@ -201,6 +230,7 @@ case "${1:-}" in
            else pod_send "$DEFAULT_REMOTE_DIR" "$@"; fi ;;
   send-to) shift; r="$1"; shift; pod_send "$r" "$@" ;;
   recv)    shift; pod_recv "$@" ;;
+  fetch)   shift; pod_fetch "$@" ;;
   ls)      shift; pod_ls "$@" ;;
   info)    pod_info ;;
   py)      shift; pod_py "$@" ;;
