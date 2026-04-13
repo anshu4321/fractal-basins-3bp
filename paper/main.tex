@@ -151,6 +151,51 @@ The opposing biases, overfitting at small $N$ and undertraining at large $N$, in
 Neither result alone settles the question. The architecture-specific result is consistent with the GOY prediction but confounds architecture with training schedule. The matched-compute result does not exhibit the predicted scaling but did not achieve equivalent convergence across cells. Whether classifier scaling matches the GOY bound under a protocol that achieves convergence parity across architectures and dataset sizes remains an open question. A future test would need to equalize convergence (for instance, via a train-to-plateau criterion) rather than equalize compute.
 
 % ============================================================================
+\section{ML-Guided Periodic Orbit Discovery}
+
+Periodic orbits are the dynamical skeleton of chaotic systems: they organize the fractal basin structure, with basin boundaries coinciding with the stable manifolds of unstable periodic orbits. We exploit this connection to turn our trained basin classifier into a tool for discovering periodic orbits.
+
+\textbf{Method.}\quad We identify basin-boundary candidates via $k$-nearest-neighbor label disagreement on the classified dataset: points whose neighbors have mixed predicted outcomes lie near basin boundaries, and therefore near periodic orbits. For each candidate, we integrate from rest and track the shape-sphere trajectory, searching for moments when the system returns close to its starting shape. The best candidates are refined using gradient-based optimization through the integrator via JAX automatic differentiation.
+
+\textbf{Results.}\quad We searched 5{,}000 boundary candidates in 88 seconds on an NVIDIA A100 GPU. Of these, 543 exhibited near-returns (return distance $<0.05$ on the shape sphere), an 11\% hit rate compared to near-zero for random sampling. After refinement, four candidates were classified as near-periodic (return distance $<0.01$):
+
+\begin{table}[t]
+\centering
+\caption{Near-periodic orbits discovered via ML-guided boundary search. Return distance is the great-circle distance on the shape sphere between the starting and returning configurations.}
+\label{tab:orbits}
+\begin{tabular}{lccc}
+\toprule
+Orbit & Period $T$ & Return distance & Energy \\
+\midrule
+\#1 & 11.709 & 0.0043 & $-3.404$ \\
+\#6 & 0.303 & 0.0044 & $-3.535$ \\
+\#7 & 0.303 & 0.0045 & $-3.535$ \\
+\#9 & 0.303 & 0.0064 & $-3.000$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Orbits \#6 and \#7 form an $S_3$-symmetric pair (identical energy and period, related by body relabeling). Orbit \#9 has a distinct energy and constitutes a separate orbit family. Figure~\ref{fig:orbits} shows two representative trajectories.
+
+\begin{figure}[t]
+  \centering
+  \begin{minipage}[t]{0.48\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{periodic_orbit_1.png}
+    \captionof{figure}{Orbit \#1 ($T = 11.7$): a complex multi-loop trajectory. Circles mark starting positions; squares mark positions after one near-period.}
+    \label{fig:orbit1}
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.48\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{periodic_orbit_6.png}
+    \captionof{figure}{Orbit \#6 ($T = 0.3$): a short-period collinear brake orbit. The nearly collinear bodies oscillate and return close to their starting configuration.}
+    \label{fig:orbit6}
+  \end{minipage}
+\end{figure}
+
+\textbf{Novelty.}\quad Previous approaches to three-body periodic orbit discovery use grid search \citep{Suvakov2013}, supercomputer-scale numerical simulation \citep{LiLiao2017}, or neural networks to interpolate known orbits to new parameters. Our method is the first, to our knowledge, to use a trained basin classifier's decision boundaries as a sampling prior for orbit discovery in the general three-body problem. The classifier was never trained on periodic orbits; it learned basin boundaries for escape prediction, and those boundaries coincide with the unstable manifolds of periodic orbits by the structure of chaotic scattering.
+
+% ============================================================================
 \section{Discussion}
 
 \textbf{Active learning and dimensionality.}\quad The failure of boundary-targeted active learning in 6D is not specific to the three-body problem. Any system whose basin boundary has $D_u$ close to $d$ will exhibit spatially uniform uncertainty, rendering targeted acquisition no better than random sampling. This suggests that active-learning practitioners working on high-dimensional chaotic systems should check $D_u$ before investing in boundary-detection heuristics.
@@ -164,7 +209,7 @@ Neither result alone settles the question. The architecture-specific result is c
 % ============================================================================
 \section{Conclusion}
 
-We release a benchmark for fractal-basin classification on the planar three-body problem, with $10^6$ labeled trajectories in 2D and 6D, Wada topology characterization, and measured uncertainty exponents. Active learning helps in 2D ($+3.7\%$) but fails in 6D ($-0.7\%$), explained by the uncertainty dimension $D_u = 5.86$. Whether classifier error scaling matches the four-decade-old GOY prediction under properly matched training is an open problem; our pre-registered test and its diagnostic provide a concrete starting point. Dataset and code are publicly available.
+We release a benchmark for fractal-basin classification on the planar three-body problem, with $10^6$ labeled trajectories in 2D and 6D, Wada topology characterization, and measured uncertainty exponents. Active learning helps in 2D ($+3.7\%$) but fails in 6D ($-0.7\%$), explained by the uncertainty dimension $D_u = 5.86$. Whether classifier error scaling matches the four-decade-old GOY prediction under properly matched training is an open problem; our pre-registered test and its diagnostic provide a concrete starting point. Finally, we demonstrate that the trained basin classifier can guide the discovery of periodic orbits: searching near the classifier's decision boundaries yields a 11\% hit rate, producing four near-periodic orbits in 88 seconds on a single GPU. Dataset and code are publicly available.
 
 % ============================================================================
 \bibliographystyle{plainnat}
@@ -282,5 +327,22 @@ MLP-raw and MLP-features-noshare tie at $N = 10^6$: hand-crafted features provid
 \textbf{6D scaling law.}\quad The GOY prediction for 6D is $-\alpha_{6D}/6 = -0.024$. The measured MLP slope in 6D is approximately $-0.054$, a factor of $2.2\times$ steeper. The $\alpha_{6D}$ measurement is clean ($R^2 = 0.999$) and the boundary is not multi-fractal (local $\alpha$ varies by only 0.022 across four decades of $\varepsilon$). The disagreement between predicted and measured slopes in 6D is unexplained.
 
 \textbf{SIREN architecture.}\quad A SIREN network (sinusoidal activations) was tested as an alternative to the GELU-based MLP. Performance was indistinguishable from the baseline MLP at $N = 300$k and $N = 10^6$. We do not report SIREN results in the main text.
+
+\section{Periodic Orbit Search Details}\label{app:orbits}
+
+\textbf{Candidate selection.}\quad We compute $k$-nearest-neighbor label disagreement ($k=5$) on the first 50{,}000 points of the classified 2D at-rest dataset. Points where more than 30\% of neighbors have a different label are flagged as boundary candidates. From these, we select the 5{,}000 with highest disagreement fraction.
+
+\textbf{Shooting protocol.}\quad Each candidate is integrated from rest (zero initial momenta) for 30{,}000 Yoshida-6 steps at $h = 0.003$ (total time $T = 90$). At each step, the configuration is projected to shape-sphere coordinates via the Hopf map. A running minimum of the great-circle distance between the current shape and the starting shape is maintained. Steps within the first 100 (to skip trivial near-returns) and steps where a pairwise distance drops below $r_{\min} = 0.01$ are excluded. Integration is vectorized across batches of 200 candidates using \texttt{jax.vmap}.
+
+\textbf{Refinement.}\quad The top 10 candidates (by return distance) are refined via gradient descent on the return distance. The starting shape is parameterized in spherical coordinates $(\theta, \phi)$, and the gradient of the return distance with respect to $(\theta, \phi)$ is computed via JAX reverse-mode automatic differentiation through the full integration. Each candidate is refined for 300 iterations at learning rate $10^{-4}$.
+
+\textbf{Classification.}\quad A candidate is classified as PERIODIC if the refined return distance is below 0.001 radians, NEAR-PERIODIC if below 0.01, and CANDIDATE otherwise.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=\linewidth]{periodic_orbits_summary.png}
+  \caption{All 10 orbit candidates discovered by the ML-guided search. Each panel shows the physical-space trajectories of three bodies (blue, orange, green) over one near-period. Circles mark starting positions. Four orbits (\#1, \#6, \#7, \#9) achieved near-periodic classification. Orbits \#6 and \#7 are an $S_3$-symmetric pair.}
+  \label{fig:orbits_summary}
+\end{figure}
 
 \end{document}
