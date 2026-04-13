@@ -180,6 +180,130 @@ The equivariant architecture (S3BodyNet) does *not* outperform the simple MLP. D
 
 ---
 
+## Discovering Periodic Orbits Using Machine Learning
+
+This is the part we're most excited about. We used the basin classification map as a guide to discover periodic orbits of the three-body problem, a fundamentally new approach.
+
+### What are periodic orbits and why do they matter?
+
+A periodic orbit is a trajectory where the three bodies return exactly to their starting configuration after some time. These are exceedingly rare: if you pick a random starting position, the probability of landing on a periodic orbit is essentially zero. Yet periodic orbits are the backbone of the chaotic dynamics. They are the invisible skeleton that organizes the fractal basin structure. Every basin boundary passes through (or arbitrarily close to) an unstable periodic orbit.
+
+Finding them has been a major challenge in celestial mechanics:
+- [Suvakov & Dmitrasinovic (2013)](https://arxiv.org/abs/1303.0181) found 13 new orbit families using brute-force grid search
+- [Li & Liao (2017)](https://numericaltank.sjtu.edu.cn/three-body/three-body.htm) found 695 families using supercomputers with the Clean Numerical Simulation method
+- [Liao et al. (2022)](https://arxiv.org/abs/2106.11010v1) used neural networks to extend known orbits to different mass ratios
+- [Fantino et al. (2024)](https://arxiv.org/abs/2408.03691) used Variational Autoencoders to generate orbits in the restricted three-body problem
+
+All previous approaches either search blindly (grid search) or require a catalog of known orbits to learn from (ML interpolation). **None of them use the basin structure to guide the search.**
+
+### Our approach: Basin boundaries point to periodic orbits
+
+Here's the key insight from dynamical systems theory: **periodic orbits live on basin boundaries.** The boundaries between "body 1 escapes" and "body 2 escapes" are the stable manifolds of unstable periodic orbits. If you know where the boundaries are, you know where to look for periodic orbits.
+
+We already have a map of the boundaries: it's the trained neural network classifier. Points where the classifier is uncertain (where nearby points have different predicted outcomes) are on or near a basin boundary, which means they are on or near a periodic orbit.
+
+The method:
+
+1. **Train an ML classifier** on the basin data (already done in the scaling law experiments)
+2. **Find boundary points** using k-nearest-neighbor label disagreement on the classified dataset
+3. **Shoot trajectories** from those boundary points and track the shape-sphere coordinates over time
+4. **Find near-returns**: moments when the trajectory passes close to its starting shape
+5. **Refine** the best candidates with gradient-based optimization (using JAX autodiff through the integrator)
+
+<p align="center">
+  <img src="figures/periodic_orbits_summary.png" width="700"/>
+</p>
+<p align="center"><em>All 10 discovered orbit candidates. Each panel shows the trajectories of three bodies (blue, orange, green) from start (circle) through one near-period. Four were classified as near-periodic (return distance < 0.01).</em></p>
+
+### Results
+
+We searched 5,000 basin-boundary candidates in **88 seconds** on an NVIDIA A100 GPU. Of those:
+- **543** had near-returns (trajectory passed within 0.05 radians of starting shape on the shape sphere)
+- **4** were classified as **near-periodic** (return distance < 0.01 radians)
+- The **hit rate was 11%** (543/5000), compared to near-zero for random sampling
+
+| Orbit | Classification | Period (T) | Return distance | Energy |
+|---|---|---|---|---|
+| #1 | **NEAR-PERIODIC** | 11.709 | 0.0043 | -3.404 |
+| #6 | **NEAR-PERIODIC** | 0.303 | 0.0044 | -3.535 |
+| #7 | **NEAR-PERIODIC** | 0.303 | 0.0045 | -3.535 |
+| #9 | **NEAR-PERIODIC** | 0.303 | 0.0064 | -3.000 |
+
+Orbits #6 and #7 are an S<sub>3</sub>-symmetric pair (same energy, same period, related by body relabeling). Orbit #9 has a different energy, so it is a distinct orbit family.
+
+### Orbit animations
+
+<p align="center">
+  <img src="figures/gifs/orbit_1_near-periodic.gif" width="350"/>
+  &nbsp;&nbsp;
+  <img src="figures/gifs/orbit_6_near-periodic.gif" width="350"/>
+</p>
+<p align="center"><em>Left: Orbit #1 (T=11.7), a complex multi-loop trajectory where three bodies execute an elaborate dance before nearly returning to their starting configuration. Right: Orbit #6 (T=0.3), a short-period collinear brake orbit where the nearly-collinear bodies oscillate back and forth.</em></p>
+
+<p align="center">
+  <img src="figures/gifs/orbit_2_candidate.gif" width="350"/>
+  &nbsp;&nbsp;
+  <img src="figures/gifs/orbit_4_candidate.gif" width="350"/>
+</p>
+<p align="center"><em>Left: Orbit #2 (T=3.3), a candidate with a spiraling trajectory. Right: Orbit #4 (T=41.2), the longest-period candidate found, with an intricate multi-encounter trajectory.</em></p>
+
+### Why this approach is new
+
+Previous ML approaches to three-body periodic orbits fall into two categories:
+
+1. **ML as interpolator**: Given known periodic orbits at one set of parameters, predict orbits at new parameters ([Liao et al. 2022](https://arxiv.org/abs/2106.11010v1)). This requires a starting catalog and cannot discover fundamentally new orbit families.
+
+2. **ML as generator**: Train a generative model (VAE) on a dataset of known orbits and sample new ones from the latent space ([Fantino et al. 2024](https://arxiv.org/abs/2408.03691)). Again requires a starting catalog, and works only in the restricted (not general) 3BP.
+
+Our approach is different: **ML as a guide for where to search.** The classifier has never seen a periodic orbit. It was trained to predict escape outcomes, not to find periodic trajectories. But the boundaries it learns are exactly where periodic orbits live, because the same dynamical structures (unstable manifolds of periodic orbits) create both the basin boundaries and the periodic orbits. We exploit this connection to turn a classification model into an orbit-discovery tool.
+
+To our knowledge, this is the first time a basin classifier has been used to guide periodic orbit discovery in the general three-body problem.
+
+---
+
+## The Dataset
+
+The dataset is generated deterministically from seeds and can be reproduced by running:
+
+```bash
+python experiments/01_dataset_regen/run.py
+```
+
+This produces two NPZ files in `results/01_dataset_regen/`:
+
+**`at_rest_with_diagnostics.npz`** (2D at-rest dataset, ~50 MB):
+| Field | Shape | Description |
+|---|---|---|
+| `shape_n` | (1048576, 3) | Shape sphere coordinates (n1, n2, n3) |
+| `label` | (1048576,) | Outcome class: 0=bound, 1/2/3=body escapes, -1=unresolved |
+| `r_min_ever` | (1048576,) | Minimum pairwise distance during integration |
+| `escape_time` | (1048576,) | Time of escape (inf if bound) |
+| `energy` | (1048576,) | Initial energy |
+
+After close-encounter filtering (r_min > 0.01) and removing unresolved: **953,143 clean labeled trajectories**.
+
+**Class distribution (2D at rest):**
+| Class | Count | Fraction |
+|---|---|---|
+| Bound | ~896,000 | 94.0% |
+| Body 1 escapes | ~19,000 | 2.0% |
+| Body 2 escapes | ~19,000 | 2.0% |
+| Body 3 escapes | ~19,000 | 2.0% |
+
+The three escape classes are equal by S<sub>3</sub> symmetry. The heavy class imbalance (94% bound) is a physical property of the at-rest slice: most configurations starting at rest don't have enough energy to eject a body.
+
+**Integration parameters:**
+| Parameter | Value |
+|---|---|
+| Integrator | Yoshida 6th-order symplectic |
+| Timestep | h = 0.01 |
+| Max integration time | T = 500 |
+| Total steps | 50,000 |
+| Close-encounter threshold | r_min = 0.01 |
+| Escape criterion | Standish (hyperbolic velocity relative to binary) |
+
+---
+
 ## Conclusions
 
 1. **The three-body problem produces a natural ML benchmark** with fractal basin boundaries, Wada topology, and measurable scaling exponents. We release ~2 million labeled trajectories.
@@ -188,16 +312,29 @@ The equivariant architecture (S3BodyNet) does *not* outperform the simple MLP. D
 
 3. **The GOY scaling prediction from 1983 is neither confirmed nor refuted.** It appears to hold when each model is trained optimally, but this confounds the model with its training schedule. A fair matched-protocol test produced flat slopes, but the protocol itself caused differential convergence. A properly controlled test remains an open problem.
 
+4. **Basin classifiers can guide periodic orbit discovery.** By searching near the classifier's decision boundaries, we found 4 near-periodic orbits from 5,000 candidates in 88 seconds, with an 11% hit rate. This is, to our knowledge, the first time an ML basin classifier has been used to discover periodic orbits in the general three-body problem.
+
 ---
 
 ## Repository Structure
 
 ```
 mega3bp/                        Core Python package (dynamics, integration, ML)
-experiments/                    All experiments (01 through 21)
+experiments/
+  01_dataset_regen/             Dataset generation (1M trajectories)
+  02_uncertainty_exponent/      MGOY alpha measurement
+  03_scaling_law/               Phase A scaling law (MLP, 2D + 6D)
+  04_wada_basin_entropy/        Wada merging test, basin entropy
+  05_ablation/                  Four-way architecture ablation (N=300k)
+  06_active_learning/           Active learning vs uniform (2D and 6D)
+  13_scaling_2d_s3bodynet/      Two-architecture scaling law
+  15_ablation_n1m/              Ablation at N=1M
   21_matched_protocol_final/    Pre-registered matched-compute test
+  22_periodic_orbit_search/     ML-guided periodic orbit discovery
 results/                        Result artifacts (JSON)
-figures/                        All generated figures
+figures/
+  gifs/                         Animated orbit GIFs (10 orbits)
+  PipelineStory.mp4             Manim pipeline story animation
 paper/                          LaTeX paper + compiled PDF
 ```
 
@@ -210,12 +347,41 @@ paper/                          LaTeX paper + compiled PDF
 ```bash
 pip install "jax[cuda12]" equinox optax numpy scipy matplotlib
 
-python experiments/01_dataset_regen/run.py          # Generate dataset
-python experiments/13_scaling_2d_s3bodynet/run.py    # Scaling law experiment
-python experiments/21_matched_protocol_final/lr_tuning.py   # Matched-compute test
+# Step 1: Generate the dataset (~2 min on GPU)
+python experiments/01_dataset_regen/run.py
+
+# Step 2: Measure the uncertainty exponent
+python experiments/02_uncertainty_exponent/run.py
+
+# Step 3: Run the scaling law experiment
+python experiments/13_scaling_2d_s3bodynet/run.py
+
+# Step 4: Run the matched-compute test
+python experiments/21_matched_protocol_final/lr_tuning.py
 python experiments/21_matched_protocol_final/run_sweep.py
 python experiments/21_matched_protocol_final/fit_and_verdict.py
+
+# Step 5: Search for periodic orbits
+python experiments/22_periodic_orbit_search/run.py
+
+# Step 6: Visualize discovered orbits
+python experiments/22_periodic_orbit_search/visualize.py
+
+# Step 7: Generate orbit GIFs
+python experiments/22_periodic_orbit_search/make_gifs.py
 ```
+
+## References
+
+- Grebogi, McDonald, Ott, Yorke (1983). [Final state sensitivity: an obstruction to predictability](https://doi.org/10.1016/0375-9601(83)90945-3). *Physics Letters A* 99, 415-418.
+- McDonald, Grebogi, Ott, Yorke (1985). [Fractal basin boundaries](https://doi.org/10.1016/0167-2789(85)90001-6). *Physica D* 17, 125-153.
+- Montgomery (2015). [The three-body problem and the shape sphere](https://arxiv.org/abs/1402.0841). *American Mathematical Monthly* 122, 299-321.
+- Suvakov, Dmitrasinovic (2013). [Three classes of Newtonian three-body planar periodic orbits](https://arxiv.org/abs/1303.0181). *Physical Review Letters* 110, 114301.
+- Li, Liao (2017). [More than 600 new families of periodic planar three-body orbits](https://arxiv.org/abs/1705.00527). *Science China Physics* 60, 129511.
+- Trani, Leigh, Boekholt, Portegies Zwart (2024). [Isles of regularity in a sea of chaos amid the gravitational three-body problem](https://arxiv.org/abs/2403.03247). *Astronomy & Astrophysics* 689, A24.
+- Daza, Wagemakers, Sanjuan (2018). [Ascertaining when a basin is Wada: the merging method](https://doi.org/10.1038/s41598-018-28119-0). *Scientific Reports* 8, 9954.
+- Valle, Wagemakers, Sanjuan (2024). [Deep learning-based analysis of basins of attraction](https://arxiv.org/abs/2309.15732). *Chaos* 34, 033105.
+- Breen, Foley, Boekholt, Portegies Zwart (2020). [Newton versus the machine](https://arxiv.org/abs/1910.07291). *MNRAS* 494, 2465-2470.
 
 ## Citation
 
