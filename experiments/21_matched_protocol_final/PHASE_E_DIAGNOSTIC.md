@@ -108,6 +108,6 @@ It only determines which sentence the fallback paper uses to describe what Phase
 - [x] Table 4 filled in with test-error distributions.
 - [x] Verdict C selected and its interpretation adopted.
 - [x] This file committed to the repo.
-- [ ] `BRANCH_DECISION.md` updated with diagnostic outcome sentence.
+- [x] `BRANCH_DECISION.md` updated with diagnostic outcome sentence.
 
 After that, start writing the fallback paper.
