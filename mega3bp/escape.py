@@ -141,6 +141,54 @@ def instant_escape_label(
     return label
 
 
+def two_body_energy(q: Array, p: Array, i: int, j: int, k: int) -> Array:
+    """Two-body energy of body i relative to the (j,k) binary center of mass.
+
+    E_2b = (1/2) mu |v_rel|^2 - (m_i * m_binary) / r
+    For equal masses m=1: m_binary = 2, mu = 2/3, v_rel = v_i - v_cm_jk.
+    Positive means unbound from the binary.
+    """
+    q_cm = (q[..., j, :] + q[..., k, :]) / 2.0
+    p_cm = (p[..., j, :] + p[..., k, :]) / 2.0
+    v_cm = p_cm  # m=1
+    r_vec = q[..., i, :] - q_cm
+    v_vec = p[..., i, :] - v_cm
+    r = jnp.linalg.norm(r_vec, axis=-1)
+    v2 = jnp.sum(v_vec * v_vec, axis=-1)
+    mu = 2.0 / 3.0
+    m_total = 3.0  # m_i * (m_j + m_k) for gravitational parameter
+    return 0.5 * mu * v2 - m_total / r
+
+
+def instant_escape_label_strict(
+    q: Array,
+    p: Array,
+    r_escape: float = DEFAULT_R_ESCAPE,
+    binary_factor: float = DEFAULT_BINARY_FACTOR,
+) -> Array:
+    """Strict escape criterion: Standish geometry + positive two-body energy.
+
+    Body i is escaping iff:
+      1. Standish geometric conditions (binary identified, body far and receding).
+      2. Two-body energy of body i w.r.t. the binary CM is positive (unbound).
+    """
+    base_label = instant_escape_label(q, p, r_escape, binary_factor)
+
+    e2b_1 = two_body_energy(q, p, 0, 1, 2)
+    e2b_2 = two_body_energy(q, p, 1, 0, 2)
+    e2b_3 = two_body_energy(q, p, 2, 0, 1)
+
+    strict_1 = (base_label == ESCAPE_1) & (e2b_1 > 0.0)
+    strict_2 = (base_label == ESCAPE_2) & (e2b_2 > 0.0)
+    strict_3 = (base_label == ESCAPE_3) & (e2b_3 > 0.0)
+
+    return jnp.where(
+        strict_1, ESCAPE_1,
+        jnp.where(strict_2, ESCAPE_2,
+        jnp.where(strict_3, ESCAPE_3, BOUND)),
+    )
+
+
 def min_pair_distance(q: Array) -> Array:
     r12, r13, r23 = pair_distances(q)
     return jnp.minimum(jnp.minimum(r12, r13), r23)

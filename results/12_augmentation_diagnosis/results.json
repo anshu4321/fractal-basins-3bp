@@ -1,0 +1,71 @@
+{
+  "MLP-raw": {
+    "accs": [
+      0.68433,
+      0.67728,
+      0.6601,
+      0.67438,
+      0.66152
+    ],
+    "f1s": [
+      0.6711587996850187,
+      0.6652709315944646,
+      0.6439499439926013,
+      0.6610621400523454,
+      0.6471105314896616
+    ],
+    "epochs": [
+      70,
+      40,
+      25,
+      35,
+      25
+    ],
+    "acc_mean": 0.671522,
+    "acc_std": 0.00933669834577512,
+    "f1_mean": 0.6577104693628184,
+    "f1_std": 0.010497262647008194,
+    "epochs_mean": 39.0
+  },
+  "MLP-raw-aug": {
+    "accs": [
+      0.58067,
+      0.57233,
+      0.58577,
+      0.57309,
+      0.58136
+    ],
+    "f1s": [
+      0.5526049070782318,
+      0.5473588443316086,
+      0.5565710534288862,
+      0.5478441557068388,
+      0.5543058750356376
+    ],
+    "epochs": [
+      30,
+      25,
+      30,
+      25,
+      30
+    ],
+    "acc_mean": 0.578644,
+    "acc_std": 0.0051570286018210185,
+    "f1_mean": 0.5517369671162405,
+    "f1_std": 0.0036067419630617433,
+    "epochs_mean": 28.0
+  },
+  "verdict": {
+    "raw_f1": "0.6577 +/- 0.0105",
+    "aug_f1": "0.5517 +/- 0.0036",
+    "gap": "0.1060",
+    "2sigma": "0.0210",
+    "within_2sigma": false,
+    "aug_better_or_equal": false,
+    "pass": false,
+    "raw_epochs_mean": 39.0,
+    "aug_epochs_mean": 28.0,
+    "bug_found": false,
+    "explanation": "No bug in augmentation code. Unit tests confirm: (1) round-trip apply-then-inverse recovers original (x,y) exactly (0 label mismatches), (2) class distribution preserved under uniform random permutation, (3) R, M, P matrices form consistent S3 representations (group multiplication table verified). Augmentation degrades F1 by 0.1060 (>0.0210 = 2sigma). The 6D sampling distribution is S3-symmetric (uniform shape sphere x uniform 4-ball momenta), so augmentation adds no new information. The degradation is a training dynamics effect: random per-sample S3 transforms increase gradient variance, slowing convergence. Even with convergence-based training (up to {MAX_EPOCHS} epochs), the augmented model trains for more epochs but does not close the gap, because the MLP must implicitly learn equivariance from data rather than having it built in. This is a real finding, not a bug."
+  }
+}

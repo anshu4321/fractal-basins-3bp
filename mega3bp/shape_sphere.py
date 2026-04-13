@@ -120,6 +120,67 @@ def moment_of_inertia(q: Array) -> Array:
     return jnp.sum(q * q, axis=(-2, -1))
 
 
+def jacobi_momenta_to_body(pi1: Array, pi2: Array) -> Array:
+    """Inverse Jacobi transform for momenta: (pi1, pi2) -> (p1, p2, p3).
+
+    Same linear map as for positions because equal masses make the Jacobi
+    transform orthogonal.  Each pi_i has shape (..., 2), returns (..., 3, 2).
+    Zero total momentum is guaranteed by construction.
+    """
+    p3 = SQRT_2_OVER_3 * pi2
+    p1 = -0.5 * p3 - 0.5 * SQRT2 * pi1
+    p2 = -0.5 * p3 + 0.5 * SQRT2 * pi1
+    return jnp.stack([p1, p2, p3], axis=-2)
+
+
+def body_momenta_to_jacobi(p: Array) -> tuple[Array, Array]:
+    """Forward Jacobi transform for momenta: (p1, p2, p3) -> (pi1, pi2).
+
+    Enforces zero total momentum before computing.
+    """
+    p = p - jnp.mean(p, axis=-2, keepdims=True)
+    pi1 = (p[..., 1, :] - p[..., 0, :]) / SQRT2
+    pi2 = SQRT_2_OVER_3 * (p[..., 2, :] - 0.5 * (p[..., 0, :] + p[..., 1, :]))
+    return pi1, pi2
+
+
+def sample_momentum_4ball(key: jax.Array, n: int, p_max: float = 3.0) -> Array:
+    """Sample n momentum vectors uniformly in a 4-ball of radius p_max.
+
+    Returns (n, 4) with columns [pi1x, pi1y, pi2x, pi2y].
+    """
+    key1, key2 = jax.random.split(key)
+    direction = jax.random.normal(key1, (n, 4), dtype=jnp.float64)
+    direction = direction / jnp.linalg.norm(direction, axis=-1, keepdims=True)
+    u = jax.random.uniform(key2, (n, 1), dtype=jnp.float64)
+    r = p_max * u ** 0.25
+    return direction * r
+
+
+def sample_phase_space_6d(
+    key: jax.Array,
+    n: int,
+    p_max: float = 3.0,
+    inertia: float = 1.0,
+) -> tuple[Array, Array, Array, Array]:
+    """Sample n initial conditions in the full 6D phase space.
+
+    Returns:
+        shape_pts: (n, 3)   shape sphere coordinates
+        pi_jacobi: (n, 4)   Jacobi momenta [pi1x, pi1y, pi2x, pi2y]
+        q:         (n, 3, 2) body positions (COM frame, gauge-fixed)
+        p:         (n, 3, 2) body momenta (zero total momentum)
+    """
+    key1, key2 = jax.random.split(key)
+    shape_pts = sample_shape_sphere(key1, n)
+    q = shape_to_config(shape_pts, inertia=inertia)
+    pi_flat = sample_momentum_4ball(key2, n, p_max=p_max)
+    pi1 = pi_flat[:, :2]
+    pi2 = pi_flat[:, 2:]
+    p = jacobi_momenta_to_body(pi1, pi2)
+    return shape_pts, pi_flat, q, p
+
+
 def pairwise_distances(q: Array) -> Array:
     """Returns the three pairwise distances [r12, r13, r23] for each config.
 

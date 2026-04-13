@@ -26,6 +26,7 @@ from functools import partial
 import jax
 import jax.numpy as jnp
 
+from .dynamics import total_energy
 from .escape import (
     AMBIGUOUS,
     BOUND,
@@ -33,6 +34,7 @@ from .escape import (
     DEFAULT_R_CLOSE,
     DEFAULT_R_ESCAPE,
     instant_escape_label,
+    instant_escape_label_strict,
     min_pair_distance,
     pair_distances,
 )
@@ -151,3 +153,88 @@ def integrate_batch(
         out["q_trace"] = q_trace
         out["p_trace"] = p_trace
     return out
+
+
+@partial(
+    jax.jit,
+    static_argnames=("n_steps", "strict_escape"),
+)
+def integrate_batch_diag(
+    q0: Array,
+    p0: Array,
+    h: float,
+    n_steps: int,
+    r_escape: float = DEFAULT_R_ESCAPE,
+    binary_factor: float = DEFAULT_BINARY_FACTOR,
+    r_close: float = DEFAULT_R_CLOSE,
+    strict_escape: bool = True,
+) -> dict[str, Array]:
+    """Batch integrator with per-trajectory energy-error tracking.
+
+    Like integrate_batch but additionally tracks max |ΔE/E| over each
+    trajectory, and optionally uses the strict escape criterion (Standish
+    geometry + positive two-body energy).
+
+    Returns dict with all fields from integrate_batch plus:
+        max_dE_rel:  (B,) float64, max |ΔE/E| over the trajectory
+        E_initial:   (B,) float64, initial total energy
+    """
+    B = q0.shape[0]
+    h_arr = jnp.asarray(h, dtype=jnp.float64)
+
+    E0 = total_energy(q0, p0)
+
+    init_label = jnp.zeros(B, dtype=jnp.int8)
+    init_time = jnp.full(B, jnp.inf, dtype=jnp.float64)
+    init_amb = jnp.zeros(B, dtype=jnp.bool_)
+    init_r_min = min_pair_distance(q0)
+    r12_0, r13_0, r23_0 = pair_distances(q0)
+    init_max_sep = jnp.maximum(jnp.maximum(r12_0, r13_0), r23_0)
+    init_max_dE = jnp.zeros(B, dtype=jnp.float64)
+
+    escape_fn = instant_escape_label_strict if strict_escape else instant_escape_label
+
+    def step_body(carry, i):
+        q, p, label, etime, amb, rmin_ever, maxsep_ever, max_dE = carry
+        q_new, p_new = yoshida6_step(q, p, h_arr)
+
+        r12, r13, r23 = pair_distances(q_new)
+        r_min_step = jnp.minimum(jnp.minimum(r12, r13), r23)
+        r_max_step = jnp.maximum(jnp.maximum(r12, r13), r23)
+        rmin_next = jnp.minimum(rmin_ever, r_min_step)
+        maxsep_next = jnp.maximum(maxsep_ever, r_max_step)
+
+        amb_next = amb | (r_min_step < r_close)
+
+        E_now = total_energy(q_new, p_new)
+        dE_rel = jnp.abs((E_now - E0) / jnp.where(jnp.abs(E0) > 1e-30, E0, 1.0))
+        max_dE_next = jnp.maximum(max_dE, dE_rel)
+
+        new_label_step = escape_fn(q_new, p_new, r_escape, binary_factor)
+        first_hit = (label == BOUND) & (new_label_step != BOUND)
+        label_next = jnp.where(first_hit, new_label_step, label)
+        t_now = (i.astype(jnp.float64) + 1.0) * h_arr
+        etime_next = jnp.where(first_hit, t_now, etime)
+
+        carry_next = (q_new, p_new, label_next, etime_next, amb_next,
+                      rmin_next, maxsep_next, max_dE_next)
+        return carry_next, None
+
+    init_carry = (q0, p0, init_label, init_time, init_amb,
+                  init_r_min, init_max_sep, init_max_dE)
+    final, _ = jax.lax.scan(step_body, init_carry, jnp.arange(n_steps))
+
+    q_f, p_f, label, etime, amb, rmin_ever, maxsep_ever, max_dE = final
+    label_final = jnp.where(amb, AMBIGUOUS, label)
+
+    return {
+        "q_final": q_f,
+        "p_final": p_f,
+        "label": label_final,
+        "escape_time": etime,
+        "ambiguous": amb,
+        "r_min_ever": rmin_ever,
+        "max_sep": maxsep_ever,
+        "max_dE_rel": max_dE,
+        "E_initial": E0,
+    }
