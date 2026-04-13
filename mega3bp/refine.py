@@ -72,8 +72,8 @@ def shooting_residual(params: Array, n_steps: int = REFINE_N_STEPS) -> Array:
 
 
 @partial(jax.jit, static_argnames=("n_steps",))
-def _gauss_newton_step(params: Array, n_steps: int = REFINE_N_STEPS) -> tuple[Array, Array]:
-    """One Gauss-Newton step. Returns (updated_params, residual_norm)."""
+def _lm_step(params: Array, lam: Array, n_steps: int = REFINE_N_STEPS) -> tuple[Array, Array, Array]:
+    """One Levenberg-Marquardt step. Returns (candidate_params, residual_norm, step_norm)."""
     def F(p):
         return shooting_residual(p, n_steps)
 
@@ -81,10 +81,10 @@ def _gauss_newton_step(params: Array, n_steps: int = REFINE_N_STEPS) -> tuple[Ar
     J = jax.jacfwd(F)(params)          # (12, 3)
     JtJ = J.T @ J                      # (3, 3)
     JtF = J.T @ residual               # (3,)
-    # Levenberg-Marquardt damping for robustness
-    damping = 1e-8 * jnp.eye(3)
+    # Adaptive LM damping: lam * diag(J^T J) for scale-invariance
+    damping = lam * jnp.diag(jnp.diag(JtJ) + 1e-12)
     dp = jnp.linalg.solve(JtJ + damping, JtF)
-    return params - dp, jnp.linalg.norm(residual)
+    return params - dp, jnp.linalg.norm(residual), jnp.linalg.norm(dp)
 
 
 def gauss_newton_refine(
@@ -96,13 +96,16 @@ def gauss_newton_refine(
     tol: float = 1e-10,
     verbose: bool = True,
 ) -> dict:
-    """Refine a periodic orbit candidate via Gauss-Newton.
+    """Refine a periodic orbit candidate via Levenberg-Marquardt.
+
+    Adaptive damping: starts at lam=1e-2, increases by 10x on divergence,
+    decreases by 3x on improvement. Only accepts steps that reduce residual.
 
     Args:
         theta0, phi0: initial shape-sphere angles
         T0: approximate period
         n_steps: integration steps (h = T / n_steps)
-        max_iter: maximum Gauss-Newton iterations
+        max_iter: maximum iterations
         tol: convergence tolerance on ||F||
         verbose: print iteration progress
 
@@ -111,28 +114,73 @@ def gauss_newton_refine(
                         q0, p0, qf, pf, closure_12d
     """
     params = jnp.array([theta0, phi0, T0], dtype=jnp.float64)
+    lam = jnp.float64(1e-2)  # initial damping
+
+    # Compute initial residual
+    res0 = shooting_residual(params, n_steps)
+    best_residual = float(jnp.linalg.norm(res0))
     best_params = params
-    best_residual = jnp.inf
+    current_residual = best_residual
 
+    if verbose:
+        print(f"  LM iter   0: ||F|| = {best_residual:.2e}, lam = {float(lam):.1e}")
+
+    stall_count = 0
     for i in range(max_iter):
-        params, residual = _gauss_newton_step(params, n_steps)
-        # Keep theta in valid range
-        theta_val = float(params[0])
+        candidate, _, step_norm = _lm_step(params, lam, n_steps)
+
+        # Enforce constraints on candidate
+        theta_val = float(candidate[0])
         theta_val = max(0.01, min(float(jnp.pi) - 0.01, theta_val))
-        params = params.at[0].set(theta_val)
-        # Keep T positive
-        params = params.at[2].set(jnp.maximum(params[2], 0.01))
+        candidate = candidate.at[0].set(theta_val)
+        candidate = candidate.at[2].set(jnp.maximum(candidate[2], 0.01))
 
-        if residual < best_residual:
-            best_residual = residual
-            best_params = params
+        # Evaluate candidate
+        new_res = shooting_residual(candidate, n_steps)
+        new_residual = float(jnp.linalg.norm(new_res))
 
-        if verbose and i % 10 == 0:
-            print(f"  GN iter {i:3d}: ||F|| = {float(residual):.2e}")
+        if new_residual < current_residual:
+            # Accept step, reduce damping
+            rel_improvement = (current_residual - new_residual) / max(current_residual, 1e-30)
+            params = candidate
+            current_residual = new_residual
+            lam = jnp.maximum(lam / 3.0, jnp.float64(1e-12))
 
-        if residual < tol:
+            if new_residual < best_residual:
+                best_residual = new_residual
+                best_params = params
+
+            # Only reset stall counter on meaningful improvement
+            if rel_improvement > 1e-4:
+                stall_count = 0
+            else:
+                stall_count += 1
+        else:
+            # Reject step, increase damping
+            lam = jnp.minimum(lam * 10.0, jnp.float64(1e6))
+            stall_count += 1
+
+        if verbose and (i + 1) % 5 == 0:
+            print(f"  LM iter {i+1:3d}: ||F|| = {current_residual:.2e}, "
+                  f"lam = {float(lam):.1e}, best = {best_residual:.2e}")
+
+        if current_residual < tol:
             if verbose:
-                print(f"  Converged at iter {i}: ||F|| = {float(residual):.2e}")
+                print(f"  Converged at iter {i+1}: ||F|| = {current_residual:.2e}")
+            break
+
+        # Give up if stalled for too long
+        if stall_count > 10:
+            if verbose:
+                print(f"  Stalled at iter {i+1}: ||F|| = {current_residual:.2e} "
+                      f"(best = {best_residual:.2e})")
+            break
+
+        # Early exit: if residual is still large after 15 iterations, hopeless
+        if (i + 1) >= 15 and best_residual > 1e-2:
+            if verbose:
+                print(f"  Hopeless at iter {i+1}: best ||F|| = {best_residual:.2e} "
+                      f">> 1e-8 threshold, giving up")
             break
 
     # Extract final state for diagnostics
