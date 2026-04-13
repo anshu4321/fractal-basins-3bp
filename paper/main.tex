@@ -14,6 +14,7 @@
 \usepackage{caption}
 \usepackage{subcaption}
 \usepackage{enumitem}
+\usepackage{wrapfig}
 
 \setlength{\parskip}{0.4em}
 \setlength{\parindent}{0em}
@@ -41,9 +42,16 @@ The escape basins of the gravitational three-body problem have fractal boundarie
 
 The gravitational three-body problem is a canonical example of deterministic chaos: the long-term trajectory of three interacting masses is generically unpredictable, yet the asymptotic outcome, which body escapes from the remaining binary, is a well-defined classification problem. The decision boundaries of this classification are the \emph{basin boundaries} of the dynamical system, which are known to be fractal in chaotic scattering systems \citep{GOY1983, MGOY1985}.
 
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{basin_mollweide.png}
+  \caption{Escape basins of the equal-mass planar three-body problem on the Montgomery shape sphere (Mollweide projection, ${\sim}10^6$ initial conditions at rest). Four outcome classes are shown: bound orbits and three single-body escape channels. The $120^\circ$ rotational symmetry of the $S_3$ permutation group is visible. Basin boundaries are fractal and satisfy the Wada property: every boundary point simultaneously borders all three escape basins.}
+  \label{fig:basins}
+\end{figure}
+
 A classical result of \citet{GOY1983} connects fractal geometry to predictability: for a classifier trained on $N$ uniformly sampled points in $d$ dimensions, the test error scales as $\text{error}(N) \sim N^{-\alpha/d}$, where $\alpha$ is the \emph{uncertainty exponent} measuring how quickly the fraction of ambiguous initial conditions vanishes with perturbation magnitude. This bound has been a theoretical fixture for four decades, but no quantitative test has been performed on a physically grounded system using modern neural classifiers.
 
-We contribute three things. First, a reproducible benchmark dataset on the Montgomery shape sphere \citep{Montgomery2015} (2D, $10^6$ initial conditions) and in the full 6D reduced phase space ($10^6$ initial conditions with non-zero momenta), with per-trajectory integration diagnostics. Second, a clean empirical finding: active learning that targets basin boundaries helps in 2D but fails in 6D, explained by the uncertainty dimension. Third, an open methodological problem: classifier error-scaling slopes match the GOY prediction under architecture-specific training but not under matched-compute training, with a mechanistic diagnostic explaining why.
+We contribute three things. First, a reproducible benchmark dataset on the Montgomery shape sphere \citep{Montgomery2015} (2D, $10^6$ initial conditions; Figure~\ref{fig:basins}) and in the full 6D reduced phase space ($10^6$ initial conditions with non-zero momenta), with per-trajectory integration diagnostics. Second, a clean empirical finding: active learning that targets basin boundaries helps in 2D but fails in 6D, explained by the uncertainty dimension. Third, an open methodological problem: classifier error-scaling slopes match the GOY prediction under architecture-specific training but not under matched-compute training, with a mechanistic diagnostic explaining why.
 
 % ============================================================================
 \section{Related Work}
@@ -55,7 +63,23 @@ Neural classifiers for basin prediction have been explored by \citet{Shena2021} 
 % ============================================================================
 \section{Benchmark and Setup}
 
-\textbf{Shape sphere.}\quad The configuration space of three equal-mass bodies in the plane, modulo translation, rotation, and scaling, is the Montgomery shape sphere $S^2$ \citep{Montgomery2015}. A point on this sphere is parameterized by coordinates $(n_1, n_2, n_3)$ with $n_1^2 + n_2^2 + n_3^2 = 1$. Three binary-collision singularities sit $120^\circ$ apart on the equator; the Lagrange equilateral configurations occupy the poles.
+\begin{figure}[t]
+  \centering
+  \begin{minipage}[t]{0.42\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{shape_sphere_3d.png}
+    \captionof{figure}{The Montgomery shape sphere $S^2$ parameterizing three-body configurations modulo translation, rotation, and scaling. Binary-collision singularities $C_{12}$, $C_{13}$, $C_{23}$ lie on the equator at $120^\circ$ intervals. Lagrange equilateral configurations $L_+$, $L_-$ occupy the poles.}
+    \label{fig:shape_sphere}
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.55\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{fractal_mollweide.png}
+    \captionof{figure}{Basin boundary points (Mollweide projection). Points whose nearest neighbor in perturbation space has a different class label are plotted, revealing the fractal geometry. The three colors correspond to three boundary pairs; all three overlap everywhere, confirming the Wada property. Box-counting dimension $D_{\text{all}} = 1.59$.}
+    \label{fig:fractal}
+  \end{minipage}
+\end{figure}
+
+\textbf{Shape sphere.}\quad The configuration space of three equal-mass bodies in the plane, modulo translation, rotation, and scaling, is the Montgomery shape sphere $S^2$ \citep{Montgomery2015} (Figure~\ref{fig:shape_sphere}). A point on this sphere is parameterized by coordinates $(n_1, n_2, n_3)$ with $n_1^2 + n_2^2 + n_3^2 = 1$. Three binary-collision singularities sit $120^\circ$ apart on the equator; the Lagrange equilateral configurations occupy the poles.
 
 \textbf{Integration.}\quad We integrate the Newtonian equations of motion using a 6th-order Yoshida symplectic integrator \citep{Yoshida1990} with adaptive timestep. Trajectories that approach a close encounter below $r_{\min} = 0.01$ length units at any point during integration are excluded, removing 9.1\% of the 2D sample and 3.4\% of the 6D sample. We classify each surviving trajectory by the Standish escape criterion: a body is considered escaped when it reaches hyperbolic velocity relative to the remaining binary.
 
@@ -63,7 +87,7 @@ Neural classifiers for basin prediction have been explored by \citet{Shena2021} 
 
 \textbf{Uncertainty exponent.}\quad We measure $\alpha$ via the MGOY algorithm \citep{MGOY1985}: for each perturbation scale $\varepsilon$, we sample $10^5$ pairs of initial conditions separated by $\varepsilon$ and compute the disagreement fraction $f(\varepsilon)$. A power-law fit $f(\varepsilon) \sim \varepsilon^\alpha$ yields $\alpha_{2D} = 0.259 \pm 0.019$ ($R^2 > 0.999$) and $\alpha_{6D} = 0.145 \pm 0.004$ ($R^2 = 0.999$). The corresponding uncertainty dimensions are $D_u^{2D} = d - \alpha = 1.74$ and $D_u^{6D} = 5.86$.
 
-\textbf{Wada topology.}\quad We apply the merging test of \citet{Daza2018} to the 2D basins: iteratively merging pairs of basin classes and checking whether the basin boundary remains unchanged. All three escape basins share a common boundary, confirming the Wada property. The basin entropy is $S_b = 0.222$ and the basin boundary entropy is $S_{bb} = 0.472$ \citep{Daza2016}.
+\textbf{Wada topology.}\quad We apply the merging test of \citet{Daza2018} to the 2D basins (Figure~\ref{fig:fractal}): iteratively merging pairs of basin classes and checking whether the basin boundary remains unchanged. All three escape basins share a common boundary, confirming the Wada property. The basin entropy is $S_b = 0.222$ and the basin boundary entropy is $S_{bb} = 0.472$ \citep{Daza2016}.
 
 % ============================================================================
 \section{Active Learning in 2D vs 6D}
@@ -72,8 +96,8 @@ Does boundary-targeted sampling help on fractal-basin classification? We compare
 
 \begin{figure}[t]
   \centering
-  \includegraphics[width=\linewidth]{figures/F2_al_2d_6d.png}
-  \caption{Active learning versus uniform sampling at matched labeling budget. (a) In 2D, AL consistently outperforms uniform sampling. (b) In 6D, uniform sampling performs as well or better than AL at every budget tested. Error bars are $2\sigma$ over 5 seeds.}
+  \includegraphics[width=\linewidth]{F2_al_2d_6d.png}
+  \caption{Active learning versus uniform sampling at matched labeling budget. (a) In 2D, AL consistently outperforms uniform sampling, with the gap widening at larger budgets. (b) In 6D, uniform sampling performs as well or better than AL at every budget tested. Error bars are $2\sigma$ over 5 seeds. The reversal is explained by the uncertainty dimension: $D_u = 1.74$ in 2D (boundary is localized) versus $D_u = 5.86$ in 6D (boundary nearly fills the space).}
   \label{fig:al}
 \end{figure}
 
@@ -94,8 +118,8 @@ Figure~\ref{fig:scaling}a shows the results. The MLP produces a slope of $-0.131
 
 \begin{figure}[t]
   \centering
-  \includegraphics[width=\linewidth]{figures/F3_scaling_law.png}
-  \caption{Test error versus training set size on a log-log scale. Green band shows the GOY prediction $\pm 2\sigma$. (a) Under architecture-specific training (MLP at 60 epochs, S3BodyNet at 200 epochs), both slopes fall within the GOY band. (b) Under a matched-compute protocol (identical optimizer, learning rate, and gradient-update budget for both architectures), slopes are flat or inverted, far from the GOY prediction.}
+  \includegraphics[width=\linewidth]{F3_scaling_law.png}
+  \caption{Test error versus training set size on a log-log scale. Green band shows the GOY prediction $\pm 2\sigma$. (a)~Under architecture-specific training (MLP at 60 epochs, S3BodyNet at 200 epochs), both slopes fall within the GOY band. (b)~Under a matched-compute protocol (identical optimizer, learning rate, and gradient-update budget for both architectures), slopes are flat or inverted, far from the GOY prediction. The contrast between the two panels is the central finding of this paper.}
   \label{fig:scaling}
 \end{figure}
 
@@ -113,8 +137,8 @@ The fixed gradient-update budget creates a fundamental asymmetry across dataset 
 
 \begin{figure}[t]
   \centering
-  \includegraphics[width=\linewidth]{figures/F4_diagnostic_curves.png}
-  \caption{Training diagnostics for four representative cells from the matched-compute protocol. Blue: training loss (log scale). Orange: validation macro-F1. At $N = 10$k, the MLP overfits (training loss near zero, validation F1 declines from peak). At $N = 300$k, both architectures are undertrained (training loss still falling at budget end). This differential convergence flattens the measured slope.}
+  \includegraphics[width=\linewidth]{F4_diagnostic_curves.png}
+  \caption{Training diagnostics for four representative cells from the matched-compute protocol. Blue: training loss (log scale). Orange: validation macro-F1. At $N = 10$k, the MLP overfits (training loss near zero, validation F1 declines from peak). At $N = 300$k, both architectures are undertrained (training loss still falling at budget end). This differential convergence biases the measured slope toward zero.}
   \label{fig:diagnostic}
 \end{figure}
 
@@ -133,7 +157,7 @@ Neither result alone settles the question. The architecture-specific result is c
 
 \textbf{Scaling laws and methodology.}\quad The GOY bound is a statement about asymptotic scaling under optimal classifiers. Testing it with finite neural networks introduces confounds, training dynamics, learning-rate schedules, and convergence rates, that are not part of the theoretical framework. Our results illustrate that bounds from nonlinear dynamics are not trivially testable under standard ML evaluation methodology.
 
-\textbf{Limitations.}\quad This study is restricted to equal-mass bodies in the plane. Unequal masses, post-Newtonian corrections, and energy-conditioned sampling are not covered. The Yoshida-6 integrator without explicit close-encounter regularization is inadequate for hierarchical triples; we address this via conservative close-encounter exclusion (Appendix~A). The 2D at-rest slice is a measure-zero subset of the full phase space, though it captures the essential fractal structure.
+\textbf{Limitations.}\quad This study is restricted to equal-mass bodies in the plane. Unequal masses, post-Newtonian corrections, and energy-conditioned sampling are not covered. The Yoshida-6 integrator without explicit close-encounter regularization is inadequate for hierarchical triples; we address this via conservative close-encounter exclusion (Appendix~\ref{app:integrator}). The 2D at-rest slice is a measure-zero subset of the full phase space, though it captures the essential fractal structure.
 
 \textbf{Future directions.}\quad Natural extensions include transfer to other chaotic-scattering benchmarks (H\'enon-Heiles), comparison with graph neural networks and equivariant transformer architectures, and a matched-protocol test with convergence-based stopping.
 
@@ -152,9 +176,58 @@ We release a benchmark for fractal-basin classification on the planar three-body
 
 \section{Integrator Validation}\label{app:integrator}
 
-We use a 6th-order Yoshida symplectic integrator \citep{Yoshida1990} with adaptive timestep. Relative energy conservation on the Chenciner-Montgomery figure-eight orbit \citep{ChencinerMontgomery2000} is below $10^{-12}$ over 100 orbital periods. For general initial conditions, energy is conserved to $10^{-8}$ or better over the integration window.
+We use a 6th-order Yoshida symplectic integrator \citep{Yoshida1990} with adaptive timestep. We validate on the Chenciner-Montgomery figure-eight orbit \citep{ChencinerMontgomery2000} (Figure~\ref{fig:figure_eight}), achieving relative energy conservation below $10^{-12}$ over 100 orbital periods (Figure~\ref{fig:energy}). For general initial conditions, energy is conserved to $10^{-8}$ or better over the integration window.
+
+\begin{figure}[h]
+  \centering
+  \begin{minipage}[t]{0.38\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{figure_eight.png}
+    \captionof{figure}{The Chenciner-Montgomery figure-eight periodic orbit used for integrator validation. Three equal-mass bodies chase each other along a single figure-eight trajectory.}
+    \label{fig:figure_eight}
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.58\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{figure_eight_energy.png}
+    \captionof{figure}{Relative energy error $|\Delta E / E|$ over 100 figure-eight orbital periods. The Yoshida 6th-order symplectic integrator maintains energy conservation below $10^{-12}$ throughout, with no secular drift.}
+    \label{fig:energy}
+  \end{minipage}
+\end{figure}
 
 Trajectories approaching binary collision ($r_{\min} < 0.01$) experience large force gradients that degrade integration accuracy. Rather than implement explicit regularization, we exclude these trajectories, removing 9.1\% of the 2D sample and 3.4\% of the 6D sample. This is a conservative choice: excluded trajectories are disproportionately concentrated near the basin boundaries (collision singularities lie on the boundary), so their removal slightly biases the measured uncertainty exponent downward.
+
+Integration time-cutoff sensitivity is shown in Figure~\ref{fig:timecutoff}: the bound fraction is stable across an order of magnitude in $t_{\max}$, confirming that the chosen cutoff does not materially affect the class balance.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.6\linewidth]{time_cutoff.png}
+  \caption{Bound and escape fractions as a function of the integration time cutoff $t_{\max}$, for a subsample of $10^4$ initial conditions. Both fractions are stable, indicating the classification is insensitive to the precise cutoff value.}
+  \label{fig:timecutoff}
+\end{figure}
+
+\section{Uncertainty Exponent Measurement}\label{app:alpha}
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.85\linewidth]{uncertainty_fit.png}
+  \caption{MGOY uncertainty exponent measurement. Left: 2D at-rest ($\alpha = 0.259 \pm 0.019$, $D_u = 1.74$). Right: 6D phase space ($\alpha = 0.145 \pm 0.004$, $D_u = 5.86$). Log-log plots of the uncertain fraction $f(\varepsilon)$ versus perturbation scale $\varepsilon$, with power-law fits. Both show $R^2 > 0.99$.}
+  \label{fig:alpha}
+\end{figure}
+
+The MGOY algorithm \citep{MGOY1985} measures $\alpha$ by computing the fraction of initial-condition pairs separated by $\varepsilon$ that land in different basins. We use $10^5$ pairs per $\varepsilon$ value across two decades of perturbation scales. Figure~\ref{fig:alpha} shows the measurements for both 2D and 6D.
+
+For 6D, a sliding-window analysis of local $\alpha$ across four decades of $\varepsilon$ shows variation of only 0.022, ruling out multi-fractal behavior. The boundary is uniformly fractal at all tested scales.
+
+\section{Wada Basin Test and Basin Entropy}\label{app:wada}
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.85\linewidth]{wada_basin_entropy.png}
+  \caption{Left: Wada merging test. The boundary fractal dimension is measured after iteratively merging basin pairs. All merged dimensions converge to the same value, confirming the Wada property. Right: Box-counting dimension distribution across grid resolutions, with basin entropy diagnostics ($S_b = 0.222$, $S_{bb} = 0.472$, Wada: YES).}
+  \label{fig:wada}
+\end{figure}
+
+The merging test \citep{Daza2018} iteratively merges pairs of basin classes and checks whether the boundary fractal dimension changes. If the basin is Wada, every boundary point borders all basins, so merging any two basins leaves the boundary dimension unchanged. Figure~\ref{fig:wada} confirms this for the 2D at-rest dataset: the full boundary dimension $D = 1.52$ is preserved across all pairwise merges. Basin entropy diagnostics \citep{Daza2016} yield $S_b = 0.222$ and $S_{bb} = 0.472$, with 47\% of grid boxes lying on the boundary.
 
 \section{Architecture Details}\label{app:arch}
 
@@ -162,13 +235,29 @@ Trajectories approaching binary collision ($r_{\min} < 0.01$) experience large f
 
 \textbf{S3BodyNet.}\quad Permutation-equivariant architecture. Per-body features (8 per body: distances to the other two bodies, pairwise distance products, kinetic energies, center-of-mass distance, radial velocity, angular momentum) are concatenated with global invariants (total energy, total angular momentum, symmetric distance polynomials). A shared 4-layer MLP (256 hidden, 128 output) processes each body's features. The pooled representation produces the bound logit and regression head; per-body representations produce escape logits. Weight sharing enforces $S_3$ equivariance by construction.
 
+Figure~\ref{fig:configs} illustrates the physical configurations corresponding to sampled shape-sphere points, showing the variety of triangle geometries encoded by the benchmark.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.75\linewidth]{shape_sphere_configs.png}
+  \caption{Physical three-body configurations corresponding to sampled points on the shape sphere. Each panel shows the triangle formed by three equal-mass bodies at a given $(n_1, n_2, n_3)$ coordinate. The diversity of configurations, from near-collinear to near-equilateral, illustrates the range of initial conditions in the benchmark.}
+  \label{fig:configs}
+\end{figure}
+
 \section{Matched-Compute Protocol}\label{app:protocol}
 
 The full pre-registered protocol: AdamW with $\beta_1 = 0.9$, $\beta_2 = 0.999$, $\varepsilon = 10^{-8}$, weight decay $10^{-4}$. Batch size 1024. Linear warmup from 0 to peak learning rate over 500 steps, then cosine decay to zero over the remaining budget. Total gradient updates: $\lfloor 200 \times 300{,}000 / 1024 \rfloor = 58{,}594$. Peak learning rate tuned once per architecture on a 20\% held-out slice of the $N = 10$k training set over a 60-epoch trial: both architectures selected $3 \times 10^{-3}$. Five seeds $\{0, 1, 2, 3, 4\}$. No early stopping. Test metric: $1 - \text{macro-F1}$ on a fixed $10^5$ held-out test set.
 
 \section{Four-Way Ablation}\label{app:ablation}
 
-At $N = 10^6$ training samples (2D), the ablation results are:
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.65\linewidth]{ablation_n300k.png}
+  \caption{Four-way architecture ablation at $N = 300$k (6D dataset, 5 seeds). MLP-features-noshare achieves the highest macro-F1 (0.675). $S_3$ data augmentation degrades performance by 10 F1 points, consistent with capacity dilution on already-symmetric data.}
+  \label{fig:ablation}
+\end{figure}
+
+At $N = 10^6$ training samples (2D), the ablation results sharpen further:
 
 \begin{table}[h]
 \centering

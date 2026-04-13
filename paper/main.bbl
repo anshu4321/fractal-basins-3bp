@@ -1,0 +1,150 @@
+\begin{thebibliography}{20}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Aguirre et~al.(2001)Aguirre, Vallejo, and Sanju{\'a}n]{Aguirre2001}
+Jacobo Aguirre, Juan~C. Vallejo, and Miguel A.~F. Sanju{\'a}n.
+\newblock Wada basins and chaotic invariant sets in the {H}{\'e}non-{H}eiles
+  system.
+\newblock \emph{Physical Review E}, 64:\penalty0 066208, 2001.
+\newblock \doi{10.1103/PhysRevE.64.066208}.
+
+\bibitem[Breen et~al.(2020)Breen, Foley, Boekholt, and
+  Portegies~Zwart]{Breen2020}
+Philip~G. Breen, Christopher~N. Foley, Tjarda Boekholt, and Simon
+  Portegies~Zwart.
+\newblock Newton versus the machine: solving the chaotic three-body problem
+  using deep neural networks.
+\newblock \emph{Monthly Notices of the Royal Astronomical Society},
+  494:\penalty0 2465--2470, 2020.
+\newblock \doi{10.1093/mnras/staa713}.
+
+\bibitem[Chenciner and Montgomery(2000)]{ChencinerMontgomery2000}
+Alain Chenciner and Richard Montgomery.
+\newblock A remarkable periodic solution of the three-body problem in the case
+  of equal masses.
+\newblock \emph{Annals of Mathematics}, 152:\penalty0 881--901, 2000.
+\newblock \doi{10.2307/2661357}.
+
+\bibitem[Daza et~al.(2016)Daza, Wagemakers, Georgeot, Gu{\'e}ry-Odelin, and
+  Sanju{\'a}n]{Daza2016}
+Alvar Daza, Alexandre Wagemakers, Bertrand Georgeot, David Gu{\'e}ry-Odelin,
+  and Miguel A.~F. Sanju{\'a}n.
+\newblock Basin entropy: a new tool to analyze uncertainty in dynamical
+  systems.
+\newblock \emph{Scientific Reports}, 6:\penalty0 31416, 2016.
+\newblock \doi{10.1038/srep31416}.
+
+\bibitem[Daza et~al.(2018)Daza, Wagemakers, and Sanju{\'a}n]{Daza2018}
+Alvar Daza, Alexandre Wagemakers, and Miguel A.~F. Sanju{\'a}n.
+\newblock Ascertaining when a basin is {W}ada: the merging method.
+\newblock \emph{Scientific Reports}, 8:\penalty0 9954, 2018.
+\newblock \doi{10.1038/s41598-018-28119-0}.
+
+\bibitem[Grebogi et~al.(1983)Grebogi, McDonald, Ott, and Yorke]{GOY1983}
+Celso Grebogi, Steven~W. McDonald, Edward Ott, and James~A. Yorke.
+\newblock Final state sensitivity: an obstruction to predictability.
+\newblock \emph{Physics Letters A}, 99:\penalty0 415--418, 1983.
+\newblock \doi{10.1016/0375-9601(83)90945-3}.
+
+\bibitem[Kol(2021)]{Kol2021}
+Barak Kol.
+\newblock Flux-based statistical prediction of three-body outcomes.
+\newblock \emph{Celestial Mechanics and Dynamical Astronomy}, 133:\penalty0 17,
+  2021.
+\newblock \doi{10.1007/s10569-021-10015-x}.
+
+\bibitem[Liao et~al.(2022)Liao, Li, and Yang]{Liao2022}
+Shijun Liao, Xiaoming Li, and Yu~Yang.
+\newblock Three-body problem: from {N}ewton to supercomputer plus machine
+  learning.
+\newblock \emph{New Astronomy}, 96:\penalty0 101850, 2022.
+\newblock \doi{10.1016/j.newast.2022.101850}.
+
+\bibitem[Manwadkar et~al.(2021)Manwadkar, Kol, Trani, and Leigh]{Manwadkar2021}
+Viraj Manwadkar, Barak Kol, Alessandro~A. Trani, and Nathan W.~C. Leigh.
+\newblock Chaos and {L}evy flights in the three-body problem.
+\newblock \emph{Monthly Notices of the Royal Astronomical Society},
+  506:\penalty0 692--712, 2021.
+\newblock \doi{10.1093/mnras/stab1689}.
+
+\bibitem[McDonald et~al.(1985)McDonald, Grebogi, Ott, and Yorke]{MGOY1985}
+Steven~W. McDonald, Celso Grebogi, Edward Ott, and James~A. Yorke.
+\newblock Fractal basin boundaries.
+\newblock \emph{Physica D}, 17:\penalty0 125--153, 1985.
+\newblock \doi{10.1016/0167-2789(85)90001-6}.
+
+\bibitem[Montgomery(2015)]{Montgomery2015}
+Richard Montgomery.
+\newblock The three-body problem and the shape sphere.
+\newblock \emph{American Mathematical Monthly}, 122:\penalty0 299--321, 2015.
+\newblock \doi{10.4169/amer.math.monthly.122.04.299}.
+
+\bibitem[Nusse and Yorke(1992)]{NusseYorke1992}
+Helena~E. Nusse and James~A. Yorke.
+\newblock Wada basin boundaries and basin cells.
+\newblock \emph{Communications in Mathematical Physics}, 150:\penalty0 1--21,
+  1992.
+\newblock \doi{10.1007/BF02096562}.
+
+\bibitem[Poon et~al.(1996)Poon, Campos, Ott, and Grebogi]{Poon1996}
+Leon Poon, Julio Campos, Edward Ott, and Celso Grebogi.
+\newblock Wada basin boundaries in chaotic scattering.
+\newblock \emph{International Journal of Bifurcation and Chaos}, 6:\penalty0
+  251--265, 1996.
+\newblock \doi{10.1142/S0218127496000035}.
+
+\bibitem[Shena et~al.(2021)Shena, Siettos, and Panayotounakos]{Shena2021}
+Christos Shena, Constantinos Siettos, and Dimitris Panayotounakos.
+\newblock Using neural networks to predict the basins of attraction in
+  dynamical systems.
+\newblock \emph{Chaos}, 31:\penalty0 023116, 2021.
+\newblock \doi{10.1063/5.0024524}.
+
+\bibitem[Stone and Leigh(2019)]{StoneLeigh2019}
+Nicholas~C. Stone and Nathan W.~C. Leigh.
+\newblock A statistical solution to the chaotic, non-hierarchical three-body
+  problem.
+\newblock \emph{Nature}, 576:\penalty0 406--410, 2019.
+\newblock \doi{10.1038/s41586-019-1833-8}.
+
+\bibitem[Trani et~al.(2024)Trani, Leigh, Boekholt, and
+  Portegies~Zwart]{Trani2024}
+Alessandro~A. Trani, Nathan W.~C. Leigh, Tjarda C.~N. Boekholt, and Simon
+  Portegies~Zwart.
+\newblock Isles of regularity in a sea of chaos amid the gravitational
+  three-body problem.
+\newblock \emph{Astronomy \& Astrophysics}, 689:\penalty0 A24, 2024.
+\newblock \doi{10.1051/0004-6361/202449862}.
+
+\bibitem[Umehara and Tanikawa(1998)]{UmeharaTanikawa1998}
+Hiroaki Umehara and Kiyotaka Tanikawa.
+\newblock Binary and triple collisions causing instability in the free-fall
+  three-body problem.
+\newblock \emph{Celestial Mechanics and Dynamical Astronomy}, 70:\penalty0
+  167--186, 1998.
+\newblock \doi{10.1023/A:1026428207880}.
+
+\bibitem[Valle et~al.(2024)Valle, Wagemakers, and Sanju{\'a}n]{Valle2024}
+David Valle, Alexandre Wagemakers, and Miguel A.~F. Sanju{\'a}n.
+\newblock Deep learning-based analysis of basins of attraction.
+\newblock \emph{Chaos}, 34:\penalty0 033105, 2024.
+\newblock \doi{10.1063/5.0159656}.
+
+\bibitem[Yoshida(1990)]{Yoshida1990}
+Haruo Yoshida.
+\newblock Construction of higher order symplectic integrators.
+\newblock \emph{Physics Letters A}, 150:\penalty0 262--268, 1990.
+\newblock \doi{10.1016/0375-9601(90)90092-3}.
+
+\bibitem[Zaheer et~al.(2017)Zaheer, Kottur, Ravanbakhsh, P{\'o}czos,
+  Salakhutdinov, and Smola]{DeepSets2017}
+Manzil Zaheer, Satwik Kottur, Siamak Ravanbakhsh, Barnab{\'a}s P{\'o}czos,
+  Ruslan Salakhutdinov, and Alexander~J. Smola.
+\newblock Deep sets.
+\newblock In \emph{Advances in Neural Information Processing Systems}, 2017.
+
+\end{thebibliography}
