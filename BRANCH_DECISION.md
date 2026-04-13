@@ -54,3 +54,8 @@ GOY scaling demoted to "Observed scaling exponents and the GOY prediction" secti
 - N=300k and N=1M ablation (appendix).
 - 6D scaling law disagreement with GOY (part of "observed range" section).
 - Phase E matched-protocol results (appendix table).
+- Phase E training diagnostics (appendix: 4 diagnostic figures showing differential convergence).
+
+## Diagnostic outcome
+
+Verdict C. The fixed gradient-update budget produced differential convergence: overfitting at small N (MLP N=10k training loss near zero, val F1 declined from peak) and undertraining at large N (both architectures, training loss still falling at budget end). The near-zero slopes are an artifact of this bias, not evidence against GOY. Fallback paper proceeds with this framing.
