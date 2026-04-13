@@ -197,8 +197,21 @@ def main():
         "criteria": criteria,
     }
 
+    def to_native(obj):
+        if isinstance(obj, (np.bool_, np.integer)):
+            return int(obj)
+        if isinstance(obj, np.floating):
+            return float(obj)
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return obj
+
+    class NumpyEncoder(json.JSONEncoder):
+        def default(self, obj):
+            return to_native(obj)
+
     with open(EXP_DIR / "fit.json", "w") as f:
-        json.dump(fit_output, f, indent=2)
+        json.dump(fit_output, f, indent=2, cls=NumpyEncoder)
     print(f"\nWrote fit.json")
 
     # --- Write VERDICT.md ---
