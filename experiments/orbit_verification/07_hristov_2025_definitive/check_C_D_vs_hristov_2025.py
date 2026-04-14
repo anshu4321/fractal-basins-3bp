@@ -140,6 +140,91 @@ def canonical_euler_transform(q: np.ndarray, p: np.ndarray,
     }
 
 
+def build_hp_integrator(dps_bits: int = 200):
+    """Build a heyoka.taylor_adaptive in mpfr (real) mode for the planar
+    equal-mass 3-body problem with unit masses and G=1.
+
+    State layout (12 vars):
+      q0x, q0y, q1x, q1y, q2x, q2y, v0x, v0y, v1x, v1y, v2x, v2y
+    """
+    import heyoka as hy
+    (q0x, q0y, q1x, q1y, q2x, q2y,
+     v0x, v0y, v1x, v1y, v2x, v2y) = hy.make_vars(
+        "q0x", "q0y", "q1x", "q1y", "q2x", "q2y",
+        "v0x", "v0y", "v1x", "v1y", "v2x", "v2y",
+    )
+
+    def r3(ax, ay, bx, by):
+        dx = bx - ax
+        dy = by - ay
+        r2 = dx * dx + dy * dy
+        return r2 ** 1.5
+
+    r01 = r3(q0x, q0y, q1x, q1y)
+    r02 = r3(q0x, q0y, q2x, q2y)
+    r12 = r3(q1x, q1y, q2x, q2y)
+
+    # a_i = sum_j (q_j - q_i) / r_ij^3
+    a0x = (q1x - q0x) / r01 + (q2x - q0x) / r02
+    a0y = (q1y - q0y) / r01 + (q2y - q0y) / r02
+    a1x = (q0x - q1x) / r01 + (q2x - q1x) / r12
+    a1y = (q0y - q1y) / r01 + (q2y - q1y) / r12
+    a2x = (q0x - q2x) / r02 + (q1x - q2x) / r12
+    a2y = (q0y - q2y) / r02 + (q1y - q2y) / r12
+
+    rhs = [
+        (q0x, v0x), (q0y, v0y),
+        (q1x, v1x), (q1y, v1y),
+        (q2x, v2x), (q2y, v2y),
+        (v0x, a0x), (v0y, a0y),
+        (v1x, a1x), (v1y, a1y),
+        (v2x, a2x), (v2y, a2y),
+    ]
+
+    # Dummy IC (zeros) for compile; will be overwritten per-run.
+    ic = [hy.real("0.0", prec=dps_bits)] * 12
+
+    ta = hy.taylor_adaptive(
+        rhs,
+        ic,
+        fp_type=hy.real,
+        prec=dps_bits,
+        tol=hy.real("1e-50", prec=dps_bits),
+        compact_mode=True,
+    )
+    return ta
+
+
+def _smoketest():
+    """Build the integrator and run a 1-second check it doesn't crash."""
+    import heyoka as hy
+    print("Building HP integrator (200-bit)...")
+    t0 = time.perf_counter()
+    ta = build_hp_integrator(dps_bits=200)
+    print(f"   built in {time.perf_counter() - t0:.1f}s")
+
+    # Free-fall IC for Hristov 2025 #0006
+    entry = load_hristov_entry(6)
+    ic_q = [(-mp.mpf("0.5"), mp.mpf("0")),
+            (mp.mpf("0.5"), mp.mpf("0")),
+            (entry["x3"], entry["y3"])]
+    ic_v = [(mp.mpf("0"), mp.mpf("0"))] * 3
+    ic = []
+    for q in ic_q:
+        ic += [hy.real(mp.nstr(q[0], 50), prec=200),
+               hy.real(mp.nstr(q[1], 50), prec=200)]
+    for v in ic_v:
+        ic += [hy.real(mp.nstr(v[0], 50), prec=200),
+               hy.real(mp.nstr(v[1], 50), prec=200)]
+    ta.state[:] = ic
+    ta.time = hy.real("0.0", prec=200)
+    t_end = hy.real("0.01", prec=200)
+    t0 = time.perf_counter()
+    res = ta.propagate_until(t_end)
+    print(f"   stepped to t=0.01 in {time.perf_counter() - t0:.2f}s, status={res}")
+    print(f"   final state[0]: {ta.state[0]}")
+
+
 def main():
     for orbit_name, row in HRISTOV_TARGETS.items():
         entry = load_hristov_entry(row)
@@ -155,4 +240,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    if "--smoketest" in sys.argv:
+        _smoketest()
+    else:
+        main()
