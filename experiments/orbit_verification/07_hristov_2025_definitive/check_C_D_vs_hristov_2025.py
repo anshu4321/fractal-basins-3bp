@@ -4,6 +4,7 @@ See DESIGN.md in this directory.
 """
 from __future__ import annotations
 
+import functools
 import json
 import os
 import sys
@@ -19,6 +20,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[3]
 EXP_DIR = Path(__file__).resolve().parent
 CAT_FILE = PROJECT_ROOT / "experiments/orbit_verification/00_catalogs/hristov_2025_stable.txt"
 
+@functools.lru_cache(maxsize=1)
 def _load_our_orbits():
     """Load HP-refined IC strings for each orbit present at 50-digit precision.
 
@@ -43,12 +45,14 @@ def _load_our_orbits():
         except KeyError:
             # Orbit entry present but HP strings missing — skip gracefully.
             continue
+    if not out:
+        raise RuntimeError(f"No HP orbits loaded from {src}; run 06_high_precision first")
     return out
 
 
-# Our orbit HP ICs from 06_high_precision/hp_heyoka_newton_results.json,
-# loaded at 50-digit precision (v1_HP, v2_HP, T_HP strings).
-OUR_ORBITS = _load_our_orbits()
+def get_our_orbits():
+    """Accessor for HP-refined orbit ICs (lazy-loaded, cached)."""
+    return _load_our_orbits()
 
 HRISTOV_TARGETS = {
     "C": 6,   # Hristov 2025 row index (1-based) for #0006
@@ -245,6 +249,7 @@ def _smoketest():
 
 
 def main():
+    our_orbits = get_our_orbits()
     for orbit_name, row in HRISTOV_TARGETS.items():
         entry = load_hristov_entry(row)
         print(f"[{orbit_name}] {entry['id']}:")
@@ -252,8 +257,8 @@ def main():
         print(f"   y3     = {mp.nstr(entry['y3'], 25)}")
         print(f"   T      = {mp.nstr(entry['T'], 25)}")
         print(f"   T_star = {mp.nstr(entry['T_star'], 25)}")
-        print(f"   our T  = {mp.nstr(OUR_ORBITS[orbit_name]['T'], 25)}")
-        dT = abs(entry["T"] - OUR_ORBITS[orbit_name]["T"])
+        print(f"   our T  = {mp.nstr(our_orbits[orbit_name]['T'], 25)}")
+        dT = abs(entry["T"] - our_orbits[orbit_name]["T"])
         print(f"   |ΔT|   = {mp.nstr(dT, 6)}")
         print()
 

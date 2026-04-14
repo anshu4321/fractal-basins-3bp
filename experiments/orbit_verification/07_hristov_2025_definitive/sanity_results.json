@@ -1,7 +1,12 @@
 {
   "sanity_1_orbit_C": {
-    "wall_s": 3.6920124989992473,
+    "wall_s": 3.69343988399487,
     "residual": 4.150137492526768e-49,
+    "pass": true
+  },
+  "sanity_2_hristov_00001": {
+    "wall_s": 2.8290941849991214,
+    "residual": 5.854149793069295e-41,
     "pass": true
   }
 }
