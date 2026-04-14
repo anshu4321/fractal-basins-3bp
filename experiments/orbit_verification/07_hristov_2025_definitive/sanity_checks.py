@@ -63,18 +63,10 @@ def sanity_orbit_C_euler_roundtrip():
         residuals.append(abs(float(d)))
     residual = max(residuals)
     print(f"   max closure residual: {residual:.3e}")
-    passed = residual <= 1e-30
-    if passed:
-        print(f"   PASS (< 1e-30).")
-    elif residual <= 1e-10:
-        print(f"   CONCERN: residual {residual:.3e} is in grey zone "
-              f"(1e-30 < r <= 1e-10). Likely caused by double-precision "
-              f"IC seeds in OUR_ORBITS; integrator mechanics look correct.")
-    else:
-        print(f"   FAIL: residual {residual:.3e} > 1e-10 -- integrator "
-              f"is fundamentally wrong.")
-    return {"wall_s": wall, "residual": residual, "pass": passed,
-            "grey_zone": (not passed) and residual <= 1e-10}
+    if residual > 1e-30:
+        raise RuntimeError(f"Sanity 1 FAILED: residual {residual} > 1e-30")
+    print(f"   PASS (< 1e-30).")
+    return {"wall_s": wall, "residual": residual, "pass": True}
 
 
 if __name__ == "__main__":
@@ -82,7 +74,3 @@ if __name__ == "__main__":
     results["sanity_1_orbit_C"] = sanity_orbit_C_euler_roundtrip()
     Path(__file__).parent.joinpath("sanity_results.json").write_text(
         json.dumps(results, default=str, indent=2))
-    r = results["sanity_1_orbit_C"]
-    if not r["pass"] and not r["grey_zone"]:
-        raise RuntimeError(
-            f"Sanity 1 FAILED: residual {r['residual']} > 1e-10")

@@ -19,17 +19,36 @@ PROJECT_ROOT = Path(__file__).resolve().parents[3]
 EXP_DIR = Path(__file__).resolve().parent
 CAT_FILE = PROJECT_ROOT / "experiments/orbit_verification/00_catalogs/hristov_2025_stable.txt"
 
-# Our orbit HP ICs from 06_high_precision/hp_heyoka_newton_results.json.
-# We'll load exact strings from JSON in a later task; for now use frozen
-# double-precision values for quick sanity checks.
-OUR_ORBITS = {
-    "C": {"v1": mp.mpf("0.2554309356506809"),
-          "v2": mp.mpf("-0.516385839015133"),
-          "T":  mp.mpf("35.043087021664284")},
-    "D": {"v1": mp.mpf("0.5539389904823785"),
-          "v2": mp.mpf("0.4619341006364459"),
-          "T":  mp.mpf("81.08361216996745")},
-}
+def _load_our_orbits():
+    """Load HP-refined IC strings for each orbit present at 50-digit precision.
+
+    Reads 06_high_precision/hp_heyoka_newton_results.json (list of entries
+    with keys {name, v1_HP, v2_HP, T_HP, ...}) and returns a dict keyed by
+    orbit name. Any orbit missing the required HP string fields is skipped
+    so future tasks can add orbits (A, B, ...) without breaking callers.
+    """
+    src = PROJECT_ROOT / "experiments/orbit_verification/06_high_precision/hp_heyoka_newton_results.json"
+    data = json.loads(src.read_text())
+    out = {}
+    for r in data:
+        name = r.get("name")
+        if name is None:
+            continue
+        try:
+            out[name] = {
+                "v1": mp.mpf(r["v1_HP"]),
+                "v2": mp.mpf(r["v2_HP"]),
+                "T":  mp.mpf(r["T_HP"]),
+            }
+        except KeyError:
+            # Orbit entry present but HP strings missing — skip gracefully.
+            continue
+    return out
+
+
+# Our orbit HP ICs from 06_high_precision/hp_heyoka_newton_results.json,
+# loaded at 50-digit precision (v1_HP, v2_HP, T_HP strings).
+OUR_ORBITS = _load_our_orbits()
 
 HRISTOV_TARGETS = {
     "C": 6,   # Hristov 2025 row index (1-based) for #0006

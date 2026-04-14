@@ -1,8 +1,7 @@
 {
   "sanity_1_orbit_C": {
-    "wall_s": 3.6910184990119888,
-    "residual": 1.3338715513779203e-12,
-    "pass": false,
-    "grey_zone": true
+    "wall_s": 3.6920124989992473,
+    "residual": 4.150137492526768e-49,
+    "pass": true
   }
 }
