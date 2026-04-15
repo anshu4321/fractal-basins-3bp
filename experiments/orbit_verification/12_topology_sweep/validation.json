@@ -1,0 +1,30 @@
+{
+  "A": {
+    "expected_length": 24,
+    "observed_length": 24,
+    "expected_canonical_head": "123123123123123123123123",
+    "observed_canonical_head": "123123123123123123123123",
+    "equivalent": true
+  },
+  "B": {
+    "expected_length": 42,
+    "observed_length": 42,
+    "expected_canonical_head": "123123123123123123123123123123",
+    "observed_canonical_head": "123123123123123123123123123123",
+    "equivalent": true
+  },
+  "C": {
+    "expected_length": 42,
+    "observed_length": 42,
+    "expected_canonical_head": "123123123123123123123123123123",
+    "observed_canonical_head": "123123123123123123123123123123",
+    "equivalent": true
+  },
+  "D": {
+    "expected_length": 48,
+    "observed_length": 48,
+    "expected_canonical_head": "123123123123123123123123123123",
+    "observed_canonical_head": "123123123123123123123123123123",
+    "equivalent": true
+  }
+}
