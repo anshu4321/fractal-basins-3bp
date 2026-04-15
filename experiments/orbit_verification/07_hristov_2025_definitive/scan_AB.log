@@ -1,0 +1,13 @@
+Loaded 971 Hristov 2025 rows.
+
+=== Orbit A (v1=0.18900489, v2=-0.53976245, T=19.73539189) ===
+   NO strict hits. Best near-match:
+      hristov2025_0323 (row 323): dv_min = 0.015143, |dT|/T = 11.615
+   Nearest in T alone: hristov2025_0005 T=20.74906501, |dT|/T=0.051363
+
+=== Orbit B (v1=-0.20349169, v2=0.51811286, T=32.84907117) ===
+   NO strict hits. Best near-match:
+      hristov2025_0952 (row 952): dv_min = 0.004229, |dT|/T = 11.367
+   Nearest in T alone: hristov2025_0008 T=33.86775072, |dT|/T=0.031011
+
+DONE. Scanned 971 rows against orbits A, B.
