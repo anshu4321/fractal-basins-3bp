@@ -1,0 +1,26 @@
+Tier 1 orchestrator: 20 jobs (10 seeds × 2 methods), 12 parallel workers, omp_threads=1
+[OK 1/20] seed=2 label_disagreement: n_verified=43, hit_rate_verify=0.00860
+[OK 2/20] seed=3 label_disagreement: n_verified=43, hit_rate_verify=0.00860
+[OK 3/20] seed=5 label_disagreement: n_verified=43, hit_rate_verify=0.00860
+[OK 4/20] seed=0 label_disagreement: n_verified=43, hit_rate_verify=0.00860
+[OK 5/20] seed=4 label_disagreement: n_verified=45, hit_rate_verify=0.00900
+[OK 6/20] seed=1 label_disagreement: n_verified=47, hit_rate_verify=0.00940
+[OK 7/20] seed=3 classifier_entropy: n_verified=18, hit_rate_verify=0.00360
+[OK 8/20] seed=4 classifier_entropy: n_verified=18, hit_rate_verify=0.00360
+[OK 9/20] seed=5 classifier_entropy: n_verified=18, hit_rate_verify=0.00360
+[OK 10/20] seed=2 classifier_entropy: n_verified=19, hit_rate_verify=0.00380
+[OK 11/20] seed=1 classifier_entropy: n_verified=16, hit_rate_verify=0.00320
+[OK 12/20] seed=0 classifier_entropy: n_verified=19, hit_rate_verify=0.00380
+[OK 13/20] seed=7 label_disagreement: n_verified=45, hit_rate_verify=0.00900
+[OK 14/20] seed=6 classifier_entropy: n_verified=18, hit_rate_verify=0.00360
+[OK 15/20] seed=7 classifier_entropy: n_verified=19, hit_rate_verify=0.00380
+[OK 16/20] seed=8 classifier_entropy: n_verified=18, hit_rate_verify=0.00360
+[OK 17/20] seed=6 label_disagreement: n_verified=43, hit_rate_verify=0.00860
+[OK 18/20] seed=8 label_disagreement: n_verified=45, hit_rate_verify=0.00900
+[OK 19/20] seed=9 label_disagreement: n_verified=43, hit_rate_verify=0.00860
+[OK 20/20] seed=9 classifier_entropy: n_verified=19, hit_rate_verify=0.00380
+
+All 20 jobs finished.
+  label_disagreement:  10/10
+  classifier_entropy:  10/10
+Results in /home/aishwarya/3bp/experiments/orbit_discovery/tier1_ablation/results

@@ -1,0 +1,9 @@
+$ python3.10 -u /home/aishwarya/3bp/experiments/orbit_discovery/run_single_seed_method.py --seed 8 --method classifier_entropy --out-dir /home/aishwarya/3bp/experiments/orbit_discovery/tier1_ablation/results --basin-map /home/aishwarya/3bp/experiments/orbit_discovery/basin_map.npz
+Loading /home/aishwarya/3bp/experiments/orbit_discovery/basin_map.npz
+Generated 5000 candidates for classifier_entropy seed=8
+
+--- classifier_entropy seed=8 ---
+  Shooting: 178s
+  Refine: 142s, verified: 18/50
+Wrote /home/aishwarya/3bp/experiments/orbit_discovery/tier1_ablation/results/seed8_classifier_entropy.json
+  n_verified=18, hit_rate_verify=0.00360, wall=320s

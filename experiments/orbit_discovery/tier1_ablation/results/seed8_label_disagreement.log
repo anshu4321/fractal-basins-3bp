@@ -1,0 +1,9 @@
+$ python3.10 -u /home/aishwarya/3bp/experiments/orbit_discovery/run_single_seed_method.py --seed 8 --method label_disagreement --out-dir /home/aishwarya/3bp/experiments/orbit_discovery/tier1_ablation/results --basin-map /home/aishwarya/3bp/experiments/orbit_discovery/basin_map.npz
+Loading /home/aishwarya/3bp/experiments/orbit_discovery/basin_map.npz
+Generated 5000 candidates for label_disagreement seed=8
+
+--- label_disagreement seed=8 ---
+  Shooting: 247s
+  Refine: 116s, verified: 45/50
+Wrote /home/aishwarya/3bp/experiments/orbit_discovery/tier1_ablation/results/seed8_label_disagreement.json
+  n_verified=45, hit_rate_verify=0.00900, wall=364s

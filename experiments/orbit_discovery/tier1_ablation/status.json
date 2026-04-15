@@ -1,0 +1,24 @@
+{
+  "stage": "complete",
+  "progress": 20,
+  "total": 20,
+  "fraction": 1.0,
+  "elapsed_s": 823.5292494297028,
+  "eta_s": 0.0,
+  "rate_per_s": 0.02428571907294134,
+  "last_update_utc": "2026-04-15T02:47:12Z",
+  "extra": {
+    "n_seeds": 10,
+    "methods": [
+      "label_disagreement",
+      "classifier_entropy"
+    ],
+    "workers": 12,
+    "omp_threads": 1,
+    "basin_map": "/home/aishwarya/3bp/experiments/orbit_discovery/basin_map.npz",
+    "label_disagreement_done": 10,
+    "classifier_entropy_done": 10,
+    "median_n_verified_ld": 43.0,
+    "median_n_verified_ce": 18.0
+  }
+}
