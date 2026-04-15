@@ -1,0 +1,16 @@
+=== Action #4: HP cross-check (heyoka 200-bit) ===
+Gate: residual < 1e-30
+Loaded HP ICs for: ['A', 'B', 'C', 'D']
+Building heyoka HP integrator at 200-bit precision...
+   built in 0.3s
+   orbit A: T=19.7354, wall=1.96s, residual=5.340e-48  [PASS]
+   orbit B: T=32.8491, wall=3.16s, residual=1.119e-48  [PASS]
+   orbit C: T=35.0431, wall=3.06s, residual=4.150e-49  [PASS]
+   orbit D: T=81.0836, wall=3.92s, residual=4.440e-48  [PASS]
+
+Saved: /home/aishwarya/3bp/experiments/orbit_verification/10_hp_cross_check/verdict.json
+Saved: /home/aishwarya/3bp/experiments/orbit_verification/10_hp_cross_check/RESULT.md
+
+Dual confirmation: {'A': 'PASS', 'B': 'PASS', 'C': 'PASS', 'D': 'PASS'}
+Overall: ALL PASS
+Total wall time: 12.37s

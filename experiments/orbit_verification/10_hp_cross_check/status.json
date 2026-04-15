@@ -1,0 +1,22 @@
+{
+  "stage": "complete",
+  "progress": 4,
+  "total": 4,
+  "fraction": 1.0,
+  "elapsed_s": 12.36731481552124,
+  "eta_s": 0.0,
+  "rate_per_s": 0.3234331833277112,
+  "last_update_utc": "2026-04-15T02:20:49Z",
+  "extra": {
+    "latest_residual": 4.4396956482468854e-48,
+    "latest_pass": true,
+    "total_wall_s": 12.36686963000102,
+    "all_pass": true,
+    "dual_confirmation": {
+      "A": "PASS",
+      "B": "PASS",
+      "C": "PASS",
+      "D": "PASS"
+    }
+  }
+}
