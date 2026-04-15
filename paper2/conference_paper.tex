@@ -76,22 +76,23 @@
 periodic orbits per unit compute than classifier-entropy baselines in
 the equal-mass planar three-body problem (paired $t = 38$,
 $p = 1.5\!\times\!10^{-11}$, ten seeds). Guided search returns four
-orbits in the Euler velocity section. Two match entries in the Hristov
-\& Dmitra\v{s}inovi\'c (2025) stable-orbit catalog to $50$-digit
+orbits in the Euler velocity section. Two match entries in the Hristov,
+Hristova, and Tanikawa (2025) stable-orbit catalog to $50$-digit
 precision, a rediscovery from a different starting prior that acts as
 an end-to-end check. Two are absent from both the published $24{,}582$
 free-fall catalog and the $971$ stable orbits. One of the unmatched
-orbits has syzygy free-group word $(132)^{8}$, which is not equivalent
-to any of the $971$ stability-filtered labels under the standard
-free-group quotient, consistent with a new family. All four orbits
-close to residual below $10^{-47}$ under two independent high-precision
-integrators (heyoka $200$-bit MPFR Taylor and \texttt{mpmath}
-pure-Python Taylor at $30$ dps), which rules out integrator-specific
-spurious closure. Reproducing the Hristov (2025) entries required
-recognising that the catalog columns follow the Euler-section
-convention $(v_1, v_2, T, \Tstar)$ rather than the free-fall convention
-$(x_3, y_3, T, \Tstar)$; the distinction is invisible at four-digit
-precision but decisive at fifty.
+orbits has syzygy free-group word $(132)^{8}$. This word is not
+equivalent to any of the $971$ stability-filtered labels under the
+standard free-group quotient, consistent with a new family. Both new
+orbits are hyperbolic; we report the full monodromy spectra. All four
+orbits close to residual below $10^{-47}$ under two independent
+high-precision integrators (heyoka $200$-bit MPFR Taylor and
+\texttt{mpmath} pure-Python Taylor at $30$ dps), which rules out
+integrator-specific spurious closure. Reproducing the Hristov (2025)
+entries required recognising that the catalog columns follow the
+Euler-section convention $(v_1, v_2, T, \Tstar)$ rather than the
+free-fall convention $(x_3, y_3, T, \Tstar)$; the distinction is
+invisible at four-digit precision but decisive at fifty.
 \end{abstract}
 
 % =================================================================
@@ -159,7 +160,7 @@ digits.
 \paragraph{Numerical orbit catalogs.}
 \citet{Moore1993} introduced the figure-eight braid and
 \citet{ChencinerMontgomery2000} proved its existence.
-\citet{Suvakov2013} produced thirteen families by hand-tuned search.
+\citet{Suvakov2013} produced thirteen families by symmetry-guided enumeration.
 \citet{LiLiao2017} extended this to $695$ families with grid search
 and symplectic shooting at the Euler velocity section. The Hristov
 group \citep{Hristov2024Catalog} pushed the free-fall catalog to
@@ -220,8 +221,13 @@ $\qvec_1(0) = (-1, 0)$, $\qvec_2(0) = (+1, 0)$, $\qvec_3(0) = (0, 0)$,
 with momenta $\pvec_1(0) = \pvec_2(0) = (v_1, v_2)$ and
 $\pvec_3(0) = -2(v_1, v_2)$. The two scalars $(v_1, v_2)$ parametrise
 the section; a periodic orbit is the triple $(v_1, v_2, T)$ with
-period $T$. The energy is $E = 3(v_1^2 + v_2^2) - 5/2$, and the
-scale-invariant period is $\Tstar = T \, |E|^{3/2}$.
+period $T$. The energy is $E = 3(v_1^2 + v_2^2) - 5/2$, with the
+kinetic term $\tfrac{1}{2}(2|\pvec_1|^2 + |\pvec_3|^2) = 3(v_1^2+v_2^2)$
+from $|\pvec_1|^2 = |\pvec_2|^2 = v_1^2+v_2^2$ and
+$|\pvec_3|^2 = 4(v_1^2+v_2^2)$, and the potential term
+$-1/2 - 1/1 - 1/1 = -5/2$ from $r_{12}=2$, $r_{13}=r_{23}=1$ at the
+Euler configuration. The scale-invariant period is
+$\Tstar = T \, |E|^{3/2}$.
 
 \subsection{Basin map and classifier}
 
@@ -234,7 +240,7 @@ horizon $t_{\max} = 500$ is reached, in which case the cell is
 labelled \emph{bound}. The resulting four-class label field
 $y(\vvec) \in \{1, 2, 3, B\}$ is the ground truth for classifier
 training; the bound region occupies $\sim\!12.6\%$ of the square and
-contains all known Li--Liao $695$ families.
+contains all $695$ Li--Liao families and all four orbits reported here.
 
 \begin{figure}[!htb]
 \centering
@@ -272,7 +278,7 @@ Given a candidate pool of $N = 5000$ points drawn i.i.d.\ from
 $U([-0.8, 0.8]^2)$, each receives a score under one of four priors.
 
 \paragraph{Uniform random.} Score drawn i.i.d.\ from $U(0,1)$.
-\paragraph{Physics symmetry grid.} Distance to the Suvakov-type
+\paragraph{Physics symmetry grid.} Distance to the \v{S}uvakov-type
 one-parameter symmetry axes, with Gaussian reweighting of width
 $\sigma = 0.03$.
 \paragraph{Classifier softmax entropy (baseline ML prior).}
@@ -299,7 +305,10 @@ in label-pure regions and saturates at multi-class meeting points.
 Unlike $H$, $D_k$ is not derived from the softmax: it uses the hard
 ground-truth labels of the training grid directly, so it is sensitive
 to the layout of the basin boundaries rather than to classifier
-temperature.
+temperature. We set $k = 6$ throughout; the choice balances locality
+against label-noise robustness. Ablation over $k$ is deferred to
+follow-up work; the ten-seed result is established for this
+configuration.
 
 The top $50$ candidates under each prior, subject to a repulsion
 radius $|\Delta \vvec| > 0.01$ to prevent collapse onto a single
@@ -361,16 +370,19 @@ For each verified orbit, three external checks are performed.
 The $24{,}582$ Hristov 2024 free-fall initial conditions
 \citep{Hristov2024Catalog} are not directly comparable to our
 Euler-section ICs: a generic periodic orbit visits one section but not
-both. We therefore forward-integrate every catalog entry under
-Yoshida-$6$, scan the trajectory for collinear Euler crossings, and
-apply the canonical scale transformation
-$\lambda = 2/d_{\mathrm{half}}$ with
-$T_{\mathrm{can}} = \lambda^{3/2}\, T_{\mathrm{Hristov}}$. The closest
-$(v_1, v_2, T_{\mathrm{can}})$ to each of our orbits is recorded,
-under the four sign symmetries
-$\vvec \mapsto (\pm v_1, \pm v_2)$. A STRONG match requires
-$|\Delta \vvec| < 10^{-4}$ and $|\Delta T|/T < 10^{-3}$; a WEAK match
-relaxes both to $10^{-2}$.
+both. Each entry is forward-integrated for one full period at
+Yoshida-$6$ with $N = 5\!\times\!10^4$ steps; at each step the signed
+area $w = (\qvec_1 - \qvec_3) \times (\qvec_2 - \qvec_3)$ is computed,
+and a sign change in $w$ between consecutive steps indicates a
+collinear crossing, refined by linear interpolation. At each collinear
+crossing the configuration is tested for Euler-type ordering (body $3$
+central); if so, the momenta are projected to the canonically scaled
+$(v_1, v_2)$ parametrisation via
+$\lambda = 2/d_{\mathrm{half}}$, $T_{\mathrm{can}} = \lambda^{3/2}\,
+T_{\mathrm{Hristov}}$, and compared against our candidate orbits under
+the four sign symmetries $\vvec \mapsto (\pm v_1, \pm v_2)$. A STRONG
+match requires $|\Delta \vvec| < 10^{-4}$ and $|\Delta T|/T < 10^{-3}$;
+a WEAK match relaxes both to $10^{-2}$.
 
 \paragraph{Hristov 2025 direct identity check.}
 The $971$ Hristov 2025 stable entries are compared at $50$-digit
@@ -438,8 +450,10 @@ paired per-seed difference is
 $\{24, 31, 24, 25, 27, 25, 25, 26, 27, 24\}$ (mean $+25.8$, std
 $2.15$); paired $t = 37.95$, one-sided $p = 1.5 \times 10^{-11}$;
 Cohen's $d = 12.0$; win rate $10/10$. The gap is uniform, not just
-large on average: the worst seed for label-disagreement still beats
-the best seed for entropy by $14$ orbits. Within-method variance
+large on average: the worst label-disagreement seed ($43$ orbits)
+still beats the best entropy seed ($19$ orbits) by $24$ orbits, and
+the minimum paired difference across the ten seeds is also $24$.
+Within-method variance
 ($1.4$ and $0.9$) is two orders of magnitude below the between-method
 gap ($25.8$), placing the ranking outside any reasonable statistical
 doubt. Figure~\ref{fig:tier1} plots the paired design.
@@ -589,9 +603,10 @@ the $2024$ catalog is free-fall as documented. Second, Hristov 2025
 row $6$ integrated as free-fall does not close (residual $2.43$) and
 visits zero Euler crossings. Third, Hristov 2025 row $6$ reinterpreted
 as Euler closes to $4.15 \times 10^{-49}$ and matches our orbit C to
-$50$ digits. The discrepancy is invisible at four-decimal precision
-(the Euler reinterpretation looks like a coincidence and free-fall
-``almost'' closes at low precision) and decisive at fifty.
+$50$ digits. The two conventions are indistinguishable at low
+precision and exact at high: free-fall ``almost'' closes for Hristov
+2025 rows at four decimals, while the Euler reading collapses to
+$10^{-49}$ once $50$ digits are exposed.
 
 \begin{figure}[!htb]
 \centering
@@ -618,20 +633,25 @@ words. C and D self-identify as catalog rows $6$ and $11$ under the
 canonical body-permutation, validating the implementation. With that
 gate passed, the verdicts for A and B are:
 
-\paragraph{Orbit A: new family.}
+\paragraph{Orbit A: new family, hyperbolic.}
 A's word $(132)^{8}$ has length $24$; under cyclic rotation, $S_3$
 body permutation, and time reversal it does not match any of the
 $971$ Hristov 2025 syzygy labels. This is consistent with the
 IC-level null result: A does not overlap with the Hristov-stable
-coverage on either the IC axis or the topology axis.
+coverage on either the IC axis or the topology axis. The monodromy
+spectrum at float64 (Table~\ref{tab:stability}) has largest
+non-trivial eigenvalue $|\lambda|_{\max} = 43.78$ and stability index
+$s = 21.90$: A is hyperbolic.
 
-\paragraph{Orbit B: known family, new orbit.}
+\paragraph{Orbit B: known family, new orbit, hyperbolic.}
 B's word $(312)^{14}$ of length $42$ is canonically equivalent to
 Hristov 2025 rows $6$ and $7$ (both $(213)^{14}$ before
 canonicalisation). Row $6$ is our orbit C; row $7$ has $\Tstar$ and
 ICs distinct from B's. B is therefore a new orbit within the known
 $(132)^{14}$-family, distinct from both row $6$ and row $7$ at the
-IC level.
+IC level. Monodromy gives $|\lambda|_{\max} = 4.04$ and
+$s = -2.14$ (negative real pair): B is hyperbolic with a reflected
+saddle structure.
 
 \begin{table}[!htb]
 \centering
@@ -670,14 +690,58 @@ implementation.}
 \label{fig:syzygy}
 \end{figure}
 
+\subsection{Linear stability via monodromy}
+\label{sec:stability}
+
+For each of A and B we integrate the $12$-dimensional state together
+with a $12\times 12$ variational block ($156$ ODEs in total) through
+one full period $T$ at double precision using the heyoka variational
+system, and read off the monodromy matrix $M$ as the final-time
+sensitivity $\partial \xvec(T)/\partial \xvec(0)$. Eigenvalues of $M$
+come in reciprocal pairs $(\lambda, 1/\lambda)$; eigenvalues on the
+unit circle are trivial (generated by continuous symmetries: time
+translation, energy scaling, the three translation modes and the
+rotation mode), leaving one non-trivial reciprocal pair per orbit in
+the reduced $12$-dim state. C and D inherit their classification from
+their identification with Hristov 2025 \#0006 and \#0011, both of
+which appear in the stability-filtered catalog by construction.
+
+\begin{table}[!htb]
+\centering
+\caption{Monodromy spectra and linear stability. ``Trivial $\lambda{=}1$''
+counts eigenvalues within $10^{-4}$ of the unit circle (trivial modes
+from continuous symmetries). $|\lambda|_{\max}$ is the largest
+non-trivial magnitude; $s = \tfrac{1}{2}(\lambda + 1/\lambda)$ over the
+non-trivial reciprocal pair is the stability index. $\det M = 1$ and
+reciprocal-pair agreement to $\le\!10^{-11}$ verify the symplectic
+structure. A and B are hyperbolic; C and D are linearly stable by
+membership in the Hristov 2025 stability catalog.}
+\label{tab:stability}
+\footnotesize
+\setlength{\tabcolsep}{6pt}
+\begin{tabular}{@{}l c c r c l@{}}
+\toprule
+Orbit & Trivial $\lambda{=}1$ & $|\lambda|_{\max}$ & $s$ & Class & Source \\
+\midrule
+A & $10$ & $43.779$ & $+21.90$  & hyperbolic       & this work \\
+B & $10$ & $4.040$  & $-2.14$   & hyperbolic       & this work \\
+C & --   & $1.000$  & $\in[-2,2]$ & linearly stable & Hristov 2025 \#0006 \\
+D & --   & $1.000$  & $\in[-2,2]$ & linearly stable & Hristov 2025 \#0011 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 \subsection{Summary verdicts}
 
-The combined IC-level and topology-level verdicts are: \textbf{A} is
-a new orbit and a new topological family; \textbf{B} is a new orbit
-in a known family (shared with C and Hristov row $7$); \textbf{C} is
-a rediscovery of Hristov 2025 \#0006; \textbf{D} is a rediscovery of
-Hristov 2025 \#0011. The two rediscoveries act as end-to-end checks;
-the two new orbits (A in particular) are the discovery contribution.
+The combined IC-level, topology-level, and stability-level verdicts
+are: \textbf{A} is a new orbit and a new topological family, and is
+hyperbolic ($|\lambda|_{\max} = 43.78$, $s = 21.90$); \textbf{B} is a
+new orbit in a known family (shared with C and Hristov row $7$), and
+is hyperbolic ($|\lambda|_{\max} = 4.04$, $s = -2.14$); \textbf{C} is
+a rediscovery of Hristov 2025 \#0006 and is linearly stable;
+\textbf{D} is a rediscovery of Hristov 2025 \#0011 and is linearly
+stable. The two rediscoveries act as end-to-end checks; the two new
+orbits (A in particular) are the discovery contribution.
 Figure~\ref{fig:summary} compresses these verdicts into a one-page
 card.
 
@@ -721,15 +785,14 @@ set favours the former.
 The Hristov 2025 catalog columns are $(v_1, v_2, T, \Tstar)$ in Euler
 convention. The convention is consistent with the 2025 catalog being
 a stability-filtered subset of the 2024 catalog, recast in the
-Li--Liao section preferred by the linear-stability community. The
-distinction is invisible at four-decimal precision (the Euler
-reinterpretation looks plausible and free-fall integration ``almost''
-closes at low precision) and decisive at fifty. The wider lesson:
-catalog matches that fail at publication precision under one
-convention often succeed at HP under another, and the cost of
-checking both is small relative to the cost of either falsely
-claiming identity (because a coincidence was over-read) or falsely
-claiming discovery (because a match was missed).
+Li--Liao section preferred by the linear-stability community.
+Low-precision integration cannot resolve the two conventions apart,
+yet high precision collapses one of them to exact identity. The wider
+lesson: catalog matches that fail at publication
+precision under one convention often succeed at HP under another, and
+the cost of checking both is small relative to the cost of either
+falsely claiming identity (because a coincidence was over-read) or
+falsely claiming discovery (because a match was missed).
 
 \paragraph{Limitations.}
 (i)~The ablation fixes a single classifier architecture, a single
@@ -751,6 +814,12 @@ orbits that visit only the free-fall section without an Euler
 crossing are outside the search space; the pipeline could be rerun on
 the free-fall section directly, but the basin map and classifier
 would need to be retrained.
+(iv)~Monodromy for A and B is computed via heyoka variational
+equations at float64 precision; the eigenvalue precision is
+$\sim\!10^{-6}$, which is ample for the hyperbolic classification
+(both non-trivial eigenvalues sit orders of magnitude off the unit
+circle) but would not suffice for a marginal case. No marginal case
+arises here.
 
 % =================================================================
 \section{Conclusion}
@@ -761,11 +830,13 @@ classifier-entropy baseline at $p = 1.5 \times 10^{-11}$ and Cohen's
 $d = 12.0$ across ten seeds. Applied to the planar equal-mass
 zero-angular-momentum three-body problem, it returns four periodic
 orbits at $50$-digit precision: two are rediscoveries of Hristov
-(2025) entries and two are absent from $24{,}582$ Hristov 2024
-free-fall entries and $971$ Hristov 2025 stable entries. One of the
-new orbits carries a syzygy word $(132)^{8}$ not equivalent to any of
-the $971$ stability-filtered labels, consistent with a previously
-uncatalogued stable family in the equal-mass system.
+(2025) entries (linearly stable by catalog membership) and two are
+absent from $24{,}582$ Hristov 2024 free-fall entries and $971$
+Hristov 2025 stable entries. Both new orbits are hyperbolic under
+variational monodromy analysis. One of the new orbits carries a
+syzygy word $(132)^{8}$ not equivalent to any of the $971$
+stability-filtered labels, consistent with a previously uncatalogued
+hyperbolic family in the equal-mass system.
 
 % =================================================================
 \bibliographystyle{unsrtnat}
@@ -825,5 +896,46 @@ themselves rather than any integrator artefact. Equivalently: there
 is no double-precision follow-on integration, however long, that can
 distinguish these orbits from genuinely periodic solutions in any
 observable quantity.
+
+\section*{Appendix: 50-digit initial conditions}
+
+Table~\ref{tab:50digit} gives the full $50$-digit Newton-refined
+initial conditions $(v_1, v_2, T)$ at the Euler velocity section
+$\qvec_1(0) = (-1,0)$, $\qvec_2(0) = (+1,0)$, $\qvec_3(0) = (0,0)$,
+$\pvec_1(0) = \pvec_2(0) = (v_1, v_2)$, $\pvec_3(0) = -2(v_1, v_2)$.
+These are the numbers that feed the HP closure check and the
+variational monodromy run.
+
+\begin{table}[!htb]
+\centering
+\caption{Full $50$-digit initial conditions for the four orbits at
+the Euler velocity section.}
+\label{tab:50digit}
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}l l@{}}
+\toprule
+\multicolumn{2}{@{}l}{\textbf{Orbit A} (new family, hyperbolic)} \\
+\quad $v_1$ & $+0.18900489195109799314411785936206420648040942728495$ \\
+\quad $v_2$ & $-0.53976245280128937576670547271123445818823014902408$ \\
+\quad $T$   & $+19.735391893011813039864192605028744349548952250688$ \\
+\midrule
+\multicolumn{2}{@{}l}{\textbf{Orbit B} (known family, new orbit, hyperbolic)} \\
+\quad $v_1$ & $-0.20349168745060911535353203960209576264022680293933$ \\
+\quad $v_2$ & $+0.51811286074053084952246562477278992955956729408515$ \\
+\quad $T$   & $+32.849071167139646813914342733183014239102401448246$ \\
+\midrule
+\multicolumn{2}{@{}l}{\textbf{Orbit C} (= Hristov 2025 \#0006, linearly stable)} \\
+\quad $v_1$ & $+0.25543093565075946258676088280599447348904394206533$ \\
+\quad $v_2$ & $-0.51638583901511426326826978844371257637319568260501$ \\
+\quad $T$   & $+35.043087021667389223102311597599383135112270910005$ \\
+\midrule
+\multicolumn{2}{@{}l}{\textbf{Orbit D} (= Hristov 2025 \#0011, linearly stable)} \\
+\quad $v_1$ & $+0.55393899048227531124905064928435711470358210487878$ \\
+\quad $v_2$ & $+0.46193410063619444282214927165157480820275259676996$ \\
+\quad $T$   & $+81.083612169829545339768400579599869938466493617466$ \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \end{document}
