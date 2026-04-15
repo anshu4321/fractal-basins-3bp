@@ -1,0 +1,14 @@
+[WORDS] loading ICs...
+[WORDS] parallel integrate (Pool(4), n_steps=50000)...
+[WORDS] C: len=42 (events=42), closure=3.820e-12, wall=7.4s
+[WORDS] C: word = 132132132132132132132132132132132132132132
+[WORDS] D: len=48 (events=48), closure=4.687e-12, wall=7.4s
+[WORDS] D: word = 132132132132132132132132132132132132132132132132
+[WORDS] A: len=24 (events=24), closure=3.748e-12, wall=7.4s
+[WORDS] A: word = 132132132132132132132132
+[WORDS] B: len=42 (events=42), closure=1.000e-12, wall=7.4s
+[WORDS] B: word = 312312312312312312312312312312312312312312
+[WORDS] validation: C PASS, D PASS
+[WORDS] loaded 971 Hristov 2025 syzygy entries
+[WORDS] matching: A 0 matches, B 2 matches
+[WORDS] done in 7.5s

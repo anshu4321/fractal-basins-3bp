@@ -1,0 +1,59 @@
+{
+  "orbits": {
+    "A": {
+      "word": "132132132132132132132132",
+      "length": 24,
+      "equivalence_canonical": "123123123123123123123123",
+      "T": 19.735391893011812,
+      "closure_residual": 3.747781666713253e-12,
+      "wall_time_s": 7.430828333002864,
+      "n_events": 24,
+      "validation_expected_label": null,
+      "validation_result": null
+    },
+    "B": {
+      "word": "312312312312312312312312312312312312312312",
+      "length": 42,
+      "equivalence_canonical": "123123123123123123123123123123123123123123",
+      "T": 32.84907116713965,
+      "closure_residual": 1.0001074133344362e-12,
+      "wall_time_s": 7.441185563002364,
+      "n_events": 42,
+      "validation_expected_label": null,
+      "validation_result": null
+    },
+    "C": {
+      "word": "132132132132132132132132132132132132132132",
+      "length": 42,
+      "equivalence_canonical": "123123123123123123123123123123123123123123",
+      "T": 35.04308702166739,
+      "closure_residual": 3.819945797395655e-12,
+      "wall_time_s": 7.404863211006159,
+      "n_events": 42,
+      "validation_expected_label": "213213213213213213213213213213213213213213",
+      "validation_result": "PASS"
+    },
+    "D": {
+      "word": "132132132132132132132132132132132132132132132132",
+      "length": 48,
+      "equivalence_canonical": "123123123123123123123123123123123123123123123123",
+      "T": 81.08361216982955,
+      "closure_residual": 4.6867773334166585e-12,
+      "wall_time_s": 7.420917838011519,
+      "n_events": 48,
+      "validation_expected_label": "213213213213213213213213213213213213213213213213",
+      "validation_result": "PASS"
+    }
+  },
+  "config": {
+    "integrator": "yoshida6_float64",
+    "n_steps": 50000,
+    "our_to_hristov_body_map": {
+      "0": 1,
+      "1": 3,
+      "2": 2
+    },
+    "area_zero_eps": 1e-10,
+    "notes": "Validation gate: row-aligned Hristov 2025 labels. Stable-catalog row 6 = our C = syzygy row 6 (length 42). Stable-catalog row 11 = our D = syzygy row 11 (length 48)."
+  }
+}

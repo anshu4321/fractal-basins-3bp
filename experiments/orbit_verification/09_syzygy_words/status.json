@@ -1,0 +1,27 @@
+{
+  "stage": "done",
+  "progress": 4,
+  "total": 4,
+  "fraction": 1.0,
+  "elapsed_s": 7.475113391876221,
+  "eta_s": 0.0,
+  "rate_per_s": 0.5351089395308848,
+  "last_update_utc": "2026-04-15T02:12:06Z",
+  "extra": {
+    "n_steps": 50000,
+    "integrator": "yoshida6_float64",
+    "word_lengths": {
+      "C": 42,
+      "D": 48,
+      "A": 24,
+      "B": 42
+    },
+    "validation": {
+      "C": "PASS",
+      "D": "PASS"
+    },
+    "matches_A": 0,
+    "matches_B": 2,
+    "wall_time_s": 7.474897867010441
+  }
+}
