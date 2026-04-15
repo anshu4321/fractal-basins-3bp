@@ -1,0 +1,70 @@
+{
+  "D": {
+    "euler_interpretation": {
+      "orbit": "D",
+      "hristov_id": "hristov2025_0011",
+      "hypothesis": "Hristov_catalog_(x,y)_equals_(v1,v2)_in_our_Euler_convention",
+      "sign_tests": [
+        {
+          "sign_v1": 1,
+          "sign_v2": 1,
+          "closure_residual": 4.4396956482468854e-48,
+          "wall_s": 3.917712308000773
+        },
+        {
+          "sign_v1": 1,
+          "sign_v2": -1,
+          "closure_residual": 4.4396956482468854e-48,
+          "wall_s": 3.920102126998245
+        },
+        {
+          "sign_v1": -1,
+          "sign_v2": 1,
+          "closure_residual": 4.4396956482468854e-48,
+          "wall_s": 3.9217934170010267
+        },
+        {
+          "sign_v1": -1,
+          "sign_v2": -1,
+          "closure_residual": 4.4396956482468854e-48,
+          "wall_s": 3.9176252799952636
+        }
+      ],
+      "dv_min_vs_our_orbit": 4.639705911311879e-51,
+      "dv_min_sign": [
+        1,
+        1
+      ],
+      "dv_min_HP_string": "4.6397059113118787909e-51",
+      "dT_abs": 4.714734987714671e-50,
+      "dT_abs_HP_string": "4.7147349877146708994e-50",
+      "all_dv_candidates": [
+        [
+          4.639705911311879e-51,
+          1,
+          1,
+          "4.6397059113118787909e-51"
+        ],
+        [
+          0.9238682012723889,
+          1,
+          -1,
+          "0.92386820127238888564"
+        ],
+        [
+          1.1078779809645507,
+          -1,
+          1,
+          "1.1078779809645506225"
+        ],
+        [
+          1.4425415328607938,
+          -1,
+          -1,
+          "1.4425415328607937353"
+        ]
+      ],
+      "verdict": "identical_under_euler_interpretation"
+    }
+  }
+}

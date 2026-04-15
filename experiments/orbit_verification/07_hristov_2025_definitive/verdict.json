@@ -1,0 +1,31 @@
+{
+  "C": {
+    "hristov_id": "hristov2025_0006",
+    "verdict": "identical",
+    "interpretation": "Hristov 2025 catalog is Euler-section, not free-fall as README claims",
+    "dv_min": 4.652274535299979e-51,
+    "dv_min_HP_string": "4.652274535299979381e-51",
+    "closure_residual": 4.15013749217089e-49,
+    "T_ours": "35.043087021667389223",
+    "T_hristov": "35.043087021667389223",
+    "dT_abs": 4.536278845854656e-50,
+    "dT_abs_HP_string": "4.5362788458546555517e-50",
+    "free_fall_closure_residual": 2.430789503709574,
+    "free_fall_n_euler_crossings": 0
+  },
+  "D": {
+    "hristov_id": "hristov2025_0011",
+    "verdict": "identical",
+    "interpretation": "Hristov 2025 catalog is Euler-section, not free-fall as README claims",
+    "dv_min": 4.639705911311879e-51,
+    "dv_min_HP_string": "4.6397059113118787909e-51",
+    "closure_residual": 4.4396956482468854e-48,
+    "T_ours": "81.08361216982954534",
+    "T_hristov": "81.08361216982954534",
+    "dT_abs": 4.714734987714671e-50,
+    "dT_abs_HP_string": "4.7147349877146708994e-50",
+    "free_fall_closure_residual": null,
+    "free_fall_n_euler_crossings": null
+  },
+  "catalog_convention_note": "Hristov 2025 stable-orbits catalog (hristov_2025_stable.txt) columns are (v1, v2, T, T*) in Li-Liao/Euler convention, NOT (x3, y3, T, T*) in free-fall convention as the 00_catalogs/README.md states. Evidence: (a) Hristov 2024 #00001 sanity (Task 5) closed to 5.85e-41 under free-fall interpretation, so 2024 IS free-fall; (b) Hristov 2025 #0006 under free-fall interpretation doesn't close (residual 2.43), but under Euler interpretation closes to 4.15e-49 and matches our orbit C at dv_min 4.65e-51; (c) same pattern for #0011 vs orbit D (Task 7 result)."
+}

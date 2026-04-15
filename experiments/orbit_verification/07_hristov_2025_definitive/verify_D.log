@@ -1,0 +1,11 @@
+
+=== Euler-conv hypothesis: orbit D vs hristov2025_0011 ===
+   (+1v1, +1v2): closure=4.440e-48, wall=3.9s
+   (+1v1, -1v2): closure=4.440e-48, wall=3.9s
+   (-1v1, +1v2): closure=4.440e-48, wall=3.9s
+   (-1v1, -1v2): closure=4.440e-48, wall=3.9s
+   HP dv_min (best sign 1,1) = 4.6397059113118787909e-51
+   HP |dT|                                 = 4.7147349877146708994e-50
+   VERDICT (Euler hypothesis): identical_under_euler_interpretation
+
+Saved: /home/aishwarya/3bp/experiments/orbit_verification/07_hristov_2025_definitive/verify_D_result.json
