@@ -1,0 +1,19 @@
+
+=== Main: orbit C vs hristov2025_0006 ===
+   propagated 50000-grid to T=35.043087 in 38s
+   closure residual: 2.431e+00
+   WARN: closure > 1e-20; check precision.
+   found 217 collinear events, 0 with Euler-midpoint config
+   NO Euler crossings found.
+   VERDICT: distinct_no_euler_crossing
+
+=== Euler-conv hypothesis: orbit C vs hristov2025_0006 ===
+   (+1v1, +1v2): closure=4.150e-49, wall=3.1s
+   (+1v1, -1v2): closure=4.150e-49, wall=3.1s
+   (-1v1, +1v2): closure=4.150e-49, wall=3.1s
+   (-1v1, -1v2): closure=4.150e-49, wall=3.1s
+   HP dv_min (best sign 1,-1) = 4.652274535299979381e-51
+   HP |dT|                                 = 4.5362788458546555517e-50
+   VERDICT (Euler hypothesis): identical_under_euler_interpretation
+
+Saved: /home/aishwarya/3bp/experiments/orbit_verification/07_hristov_2025_definitive/verify_C_result.json

@@ -181,7 +181,8 @@ def build_hp_integrator(dps_bits: int = 200):
         dx = bx - ax
         dy = by - ay
         r2 = dx * dx + dy * dy
-        return r2 ** 1.5
+        # r2 * hy.sqrt(r2) is faster than r2 ** 1.5 at 200-bit (avoids exp/log).
+        return r2 * hy.sqrt(r2)
 
     r01 = r3(q0x, q0y, q1x, q1y)
     r02 = r3(q0x, q0y, q2x, q2y)
@@ -248,19 +249,314 @@ def _smoketest():
     print(f"   final state[0]: {ta.state[0]}")
 
 
-def main():
+def find_euler_crossings_from_grid(q_grid: np.ndarray, p_grid: np.ndarray,
+                                   t_grid: np.ndarray,
+                                   tol_midpoint: float = 1e-4):
+    """Scan dense trajectory samples for Euler-section crossings.
+
+    q_grid, p_grid: shape (N, 3, 2) float64.
+    Returns list of dicts: each describes a crossing (index, t, score, ...).
+    """
+    N = q_grid.shape[0]
+    crossings = []
+    # Area of triangle (signed). Zero when collinear.
+    def signed_area(Q):
+        a = Q[1] - Q[0]
+        b = Q[2] - Q[0]
+        return a[0] * b[1] - a[1] * b[0]
+
+    areas = np.array([signed_area(q_grid[k]) for k in range(N)])
+
+    # Locate zero-crossings of `areas` (sign changes).
+    sign_changes = []
+    for k in range(N - 1):
+        if areas[k] == 0 or (areas[k] > 0 and areas[k + 1] < 0) or (areas[k] < 0 and areas[k + 1] > 0):
+            # Refine: linear interpolation in t
+            a0, a1 = areas[k], areas[k + 1]
+            if a1 == a0:
+                alpha = 0.0
+            else:
+                alpha = a0 / (a0 - a1)
+            alpha = max(0.0, min(1.0, alpha))
+            t_cross = t_grid[k] + alpha * (t_grid[k + 1] - t_grid[k])
+            q_cross = q_grid[k] + alpha * (q_grid[k + 1] - q_grid[k])
+            p_cross = p_grid[k] + alpha * (p_grid[k + 1] - p_grid[k])
+            sign_changes.append((k, alpha, t_cross, q_cross, p_cross))
+
+    for k, alpha, t, q, p in sign_changes:
+        # Check for midpoint body
+        midpoint_body = -1
+        best_mid_dist = np.inf
+        for m in range(3):
+            others = [i for i in range(3) if i != m]
+            mid = 0.5 * (q[others[0]] + q[others[1]])
+            d_others = np.linalg.norm(q[others[0]] - q[others[1]])
+            if d_others < 1e-12:
+                continue
+            d_to_mid = np.linalg.norm(q[m] - mid) / d_others
+            if d_to_mid < best_mid_dist:
+                best_mid_dist = d_to_mid
+                midpoint_body = m
+        is_euler = best_mid_dist < tol_midpoint
+        crossings.append({
+            "step_index": k, "alpha": float(alpha), "t": float(t),
+            "area_residual_at_k": float(areas[k]),
+            "midpoint_body": int(midpoint_body),
+            "midpoint_scaled_dist": float(best_mid_dist),
+            "is_euler": bool(is_euler),
+            "q": q.tolist(), "p": p.tolist(),
+        })
+    return crossings
+
+
+def compare_to_our_orbit(v1_match: float, v2_match: float,
+                         v1_ours: float, v2_ours: float) -> dict:
+    """Compute min dv under the 4 sign-reflection symmetries."""
+    candidates = []
+    for s1, s2 in [(1, 1), (-1, -1), (1, -1), (-1, 1)]:
+        dv = ((s1 * v1_match - v1_ours)**2
+              + (s2 * v2_match - v2_ours)**2)**0.5
+        candidates.append((dv, s1, s2))
+    candidates.sort()
+    return {"dv_min": candidates[0][0],
+            "sign_s1": candidates[0][1],
+            "sign_s2": candidates[0][2],
+            "all_candidates": [(c[0], c[1], c[2]) for c in candidates]}
+
+
+def verify_hristov_entry(orbit_name: str, row: int,
+                         n_grid: int = 50000) -> dict:
+    """Main verification for one Hristov 2025 entry vs our orbit."""
+    import heyoka as hy
+    entry = load_hristov_entry(row)
+    print(f"\n=== Main: orbit {orbit_name} vs {entry['id']} ===")
+
+    ta = build_hp_integrator(200)
+
+    # Build IC as heyoka real values
+    q = [(mp.mpf("-0.5"), mp.mpf("0")),
+         (mp.mpf("0.5"),  mp.mpf("0")),
+         (entry["x3"], entry["y3"])]
+    v = [(mp.mpf("0"), mp.mpf("0"))] * 3
+    ic_real = []
+    for qi in q:
+        ic_real += [hy.real(mp.nstr(qi[0], 50), prec=200),
+                    hy.real(mp.nstr(qi[1], 50), prec=200)]
+    for vi in v:
+        ic_real += [hy.real(mp.nstr(vi[0], 50), prec=200),
+                    hy.real(mp.nstr(vi[1], 50), prec=200)]
+    ta.state[:] = ic_real
+    ta.time = hy.real("0.0", prec=200)
+
+    T = entry["T"]
+    T_end = hy.real(mp.nstr(T, 50), prec=200)
+
+    # Dense output at n_grid uniformly spaced times.
+    t_grid_mp = [T * mp.mpf(i) / mp.mpf(n_grid - 1) for i in range(n_grid)]
+    t_grid_real = [hy.real(mp.nstr(t, 50), prec=200) for t in t_grid_mp]
+
+    t0 = time.perf_counter()
+    pg_out = ta.propagate_grid(t_grid_real)
+    wall = time.perf_counter() - t0
+    print(f"   propagated {n_grid}-grid to T={float(T):.6f} in {wall:.0f}s")
+
+    # heyoka's propagate_grid API has varied across versions. It may return:
+    #   - a bare numpy array of shape (n_grid, 12), OR
+    #   - a tuple (status, min_h, max_h, nsteps, output) or similar.
+    # Unwrap defensively.
+    if isinstance(pg_out, tuple):
+        # Output array is the last element in all variants we've seen.
+        results = pg_out[-1]
+    else:
+        results = pg_out
+
+    # results shape: (n_grid, 12). Convert to float64 for post-processing.
+    state_grid = np.asarray([[float(results[i][j]) for j in range(12)]
+                             for i in range(n_grid)])
+    q_grid = state_grid[:, :6].reshape(n_grid, 3, 2)
+    p_grid = state_grid[:, 6:].reshape(n_grid, 3, 2)
+    t_grid = np.asarray([float(t) for t in t_grid_mp])
+
+    # Closure check
+    residuals = [abs(float(ta.state[i] - ic_real[i])) for i in range(12)]
+    closure = max(residuals)
+    print(f"   closure residual: {closure:.3e}")
+    if closure > 1e-20:
+        print(f"   WARN: closure > 1e-20; check precision.")
+
+    # Find all Euler crossings
+    crossings = find_euler_crossings_from_grid(q_grid, p_grid, t_grid,
+                                               tol_midpoint=1e-4)
+    euler_crossings = [c for c in crossings if c["is_euler"]]
+    print(f"   found {len(crossings)} collinear events, "
+          f"{len(euler_crossings)} with Euler-midpoint config")
+
+    # Apply canonical transform at each Euler crossing
+    matches = []
     our_orbits = get_our_orbits()
+    v1_ours = float(our_orbits[orbit_name]["v1"])
+    v2_ours = float(our_orbits[orbit_name]["v2"])
+    for c in euler_crossings:
+        q = np.asarray(c["q"])
+        p = np.asarray(c["p"])
+        try:
+            v1_match, v2_match, aux = canonical_euler_transform(q, p)
+        except ValueError as e:
+            c["transform_error"] = str(e)
+            continue
+        cmp = compare_to_our_orbit(v1_match, v2_match, v1_ours, v2_ours)
+        c["canonical_v1"] = v1_match
+        c["canonical_v2"] = v2_match
+        c["aux"] = aux
+        c["cmp"] = cmp
+        matches.append({"t_over_T": c["t"] / float(T),
+                        "dv_min": cmp["dv_min"],
+                        "half_binary_d": aux["half_binary_d"]})
+
+    # Summary
+    if matches:
+        matches.sort(key=lambda m: m["dv_min"])
+        best = matches[0]
+        verdict = (
+            "identical" if best["dv_min"] < 1e-10
+            else ("likely" if best["dv_min"] < 1e-4
+                  else ("ambiguous" if best["dv_min"] < 1e-2
+                        else "distinct_with_section_crossing")))
+        print(f"   BEST match: dv_min={best['dv_min']:.3e} at t/T={best['t_over_T']:.4f}")
+    else:
+        verdict = "distinct_no_euler_crossing"
+        best = None
+        print(f"   NO Euler crossings found.")
+
+    print(f"   VERDICT: {verdict}")
+
+    return {
+        "orbit": orbit_name,
+        "hristov_id": entry["id"],
+        "T_catalog": mp.nstr(T, 20),
+        "closure_residual": closure,
+        "wall_time_s": wall,
+        "n_collinear_events": len(crossings),
+        "n_euler_crossings": len(euler_crossings),
+        "best_match": best,
+        "all_matches": matches,
+        "verdict": verdict,
+    }
+
+
+def verify_hristov_entry_as_euler(orbit_name: str, row: int) -> dict:
+    """Alternative verification: treat Hristov 2025 (x, y) as (v1, v2) in our
+    Li-Liao Euler convention.
+
+    The README claims Hristov 2025 uses the free-fall convention. But as of
+    2026-04-15 we have strong numerical evidence that the 2025 catalog's
+    columns in ics_971_100.txt are actually (v1, v2, T, T_star) in our
+    Li-Liao/Euler convention. Sign of y may correspond to a t -> -t
+    symmetry.  This function probes that hypothesis directly: it sets up
+    the IC in our Euler convention using Hristov (x, y) as (v1, v2),
+    integrates for T, and reports closure + dv to our reference orbit.
+    """
+    import heyoka as hy
+    entry = load_hristov_entry(row)
+    print(f"\n=== Euler-conv hypothesis: orbit {orbit_name} vs {entry['id']} ===")
+
+    ta = build_hp_integrator(200)
+    T = entry["T"]
+    v1_h = entry["x3"]
+    v2_h = entry["y3"]
+
+    out = {"orbit": orbit_name, "hristov_id": entry["id"],
+           "hypothesis": "Hristov_catalog_(x,y)_equals_(v1,v2)_in_our_Euler_convention",
+           "sign_tests": []}
+
+    # Try four sign combinations of (v1, v2), since the orbit has discrete
+    # symmetries; report all closures.
+    for s1, s2 in [(1, 1), (1, -1), (-1, 1), (-1, -1)]:
+        v1 = s1 * v1_h
+        v2 = s2 * v2_h
+        q = [(mp.mpf(-1), mp.mpf(0)),
+             (mp.mpf(1), mp.mpf(0)),
+             (mp.mpf(0), mp.mpf(0))]
+        v = [(v1, v2), (v1, v2), (-2*v1, -2*v2)]
+        ic = []
+        for qi in q:
+            ic += [hy.real(mp.nstr(qi[0], 50), prec=200),
+                   hy.real(mp.nstr(qi[1], 50), prec=200)]
+        for vi in v:
+            ic += [hy.real(mp.nstr(vi[0], 50), prec=200),
+                   hy.real(mp.nstr(vi[1], 50), prec=200)]
+        ta.state[:] = ic
+        ta.time = hy.real("0.0", prec=200)
+        T_end = hy.real(mp.nstr(T, 50), prec=200)
+        t0 = time.perf_counter()
+        ta.propagate_until(T_end)
+        wall = time.perf_counter() - t0
+        res = max(abs(float(ta.state[i] - ic[i])) for i in range(12))
+        out["sign_tests"].append({
+            "sign_v1": s1, "sign_v2": s2,
+            "closure_residual": res, "wall_s": wall,
+        })
+        print(f"   ({s1:+d}v1, {s2:+d}v2): closure={res:.3e}, wall={wall:.1f}s")
+
+    # Compare directly in HP
+    our_orbits = get_our_orbits()
+    v1_ours = our_orbits[orbit_name]["v1"]
+    v2_ours = our_orbits[orbit_name]["v2"]
+    T_ours = our_orbits[orbit_name]["T"]
+    dv_candidates = []
+    for s1, s2 in [(1, 1), (1, -1), (-1, 1), (-1, -1)]:
+        dv = mp.sqrt((s1 * v1_h - v1_ours)**2 + (s2 * v2_h - v2_ours)**2)
+        dv_candidates.append((float(dv), s1, s2, mp.nstr(dv, 20)))
+    dv_candidates.sort()
+    dT = abs(T - T_ours)
+    best = dv_candidates[0]
+    out["dv_min_vs_our_orbit"] = best[0]
+    out["dv_min_sign"] = (best[1], best[2])
+    out["dv_min_HP_string"] = best[3]
+    out["dT_abs"] = float(dT)
+    out["dT_abs_HP_string"] = mp.nstr(dT, 20)
+    out["all_dv_candidates"] = [[c[0], c[1], c[2], c[3]] for c in dv_candidates]
+
+    print(f"   HP dv_min (best sign {best[1]},{best[2]}) = {best[3]}")
+    print(f"   HP |dT|                                 = {mp.nstr(dT, 20)}")
+
+    # Verdict
+    min_closure = min(t["closure_residual"] for t in out["sign_tests"])
+    if min_closure < 1e-40 and best[0] < 1e-40:
+        out["verdict"] = "identical_under_euler_interpretation"
+    elif min_closure < 1e-30 and best[0] < 1e-30:
+        out["verdict"] = "likely_identical_under_euler_interpretation"
+    else:
+        out["verdict"] = "not_identical_under_euler_interpretation"
+    print(f"   VERDICT (Euler hypothesis): {out['verdict']}")
+    return out
+
+
+def main():
+    results_all = {}
     for orbit_name, row in HRISTOV_TARGETS.items():
-        entry = load_hristov_entry(row)
-        print(f"[{orbit_name}] {entry['id']}:")
-        print(f"   x3     = {mp.nstr(entry['x3'], 25)}")
-        print(f"   y3     = {mp.nstr(entry['y3'], 25)}")
-        print(f"   T      = {mp.nstr(entry['T'], 25)}")
-        print(f"   T_star = {mp.nstr(entry['T_star'], 25)}")
-        print(f"   our T  = {mp.nstr(our_orbits[orbit_name]['T'], 25)}")
-        dT = abs(entry["T"] - our_orbits[orbit_name]["T"])
-        print(f"   |ΔT|   = {mp.nstr(dT, 6)}")
-        print()
+        if orbit_name != "C":  # D is task 7, do C here
+            continue
+
+        # Primary: run the original plan (integrate as free-fall IC,
+        # find Euler crossings). If Hristov really is free-fall this is
+        # the right test.
+        r_ff = verify_hristov_entry(orbit_name, row, n_grid=50000)
+
+        # Secondary: test the hypothesis that Hristov 2025's catalog
+        # columns are (v1, v2, T, T*) in Li-Liao/Euler convention (not
+        # free-fall). If true, closure residual will be HP-clean and
+        # dv_min will be ~1e-49.
+        r_eu = verify_hristov_entry_as_euler(orbit_name, row)
+
+        results_all[orbit_name] = {
+            "free_fall_interpretation": r_ff,
+            "euler_interpretation": r_eu,
+        }
+
+    (EXP_DIR / "verify_C_result.json").write_text(
+        json.dumps(results_all, indent=2, default=str))
+    print(f"\nSaved: {EXP_DIR / 'verify_C_result.json'}")
 
 
 if __name__ == "__main__":

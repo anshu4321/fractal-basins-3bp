@@ -1,0 +1,82 @@
+{
+  "C": {
+    "free_fall_interpretation": {
+      "orbit": "C",
+      "hristov_id": "hristov2025_0006",
+      "T_catalog": "35.043087021667389223",
+      "closure_residual": 2.430789503709574,
+      "wall_time_s": 37.66342578899639,
+      "n_collinear_events": 217,
+      "n_euler_crossings": 0,
+      "best_match": null,
+      "all_matches": [],
+      "verdict": "distinct_no_euler_crossing"
+    },
+    "euler_interpretation": {
+      "orbit": "C",
+      "hristov_id": "hristov2025_0006",
+      "hypothesis": "Hristov_catalog_(x,y)_equals_(v1,v2)_in_our_Euler_convention",
+      "sign_tests": [
+        {
+          "sign_v1": 1,
+          "sign_v2": 1,
+          "closure_residual": 4.15013749217089e-49,
+          "wall_s": 3.057180977004464
+        },
+        {
+          "sign_v1": 1,
+          "sign_v2": -1,
+          "closure_residual": 4.15013749217089e-49,
+          "wall_s": 3.0587469749880256
+        },
+        {
+          "sign_v1": -1,
+          "sign_v2": 1,
+          "closure_residual": 4.15013749217089e-49,
+          "wall_s": 3.057955259006121
+        },
+        {
+          "sign_v1": -1,
+          "sign_v2": -1,
+          "closure_residual": 4.15013749217089e-49,
+          "wall_s": 3.059200839008554
+        }
+      ],
+      "dv_min_vs_our_orbit": 4.652274535299979e-51,
+      "dv_min_sign": [
+        1,
+        -1
+      ],
+      "dv_min_HP_string": "4.652274535299979381e-51",
+      "dT_abs": 4.536278845854656e-50,
+      "dT_abs_HP_string": "4.5362788458546555517e-50",
+      "all_dv_candidates": [
+        [
+          4.652274535299979e-51,
+          1,
+          -1,
+          "4.652274535299979381e-51"
+        ],
+        [
+          0.5108618713015189,
+          -1,
+          -1,
+          "0.51086187130151892517"
+        ],
+        [
+          1.0327716780302285,
+          1,
+          1,
+          "1.0327716780302285265"
+        ],
+        [
+          1.152214038488971,
+          -1,
+          1,
+          "1.1522140384889708944"
+        ]
+      ],
+      "verdict": "identical_under_euler_interpretation"
+    }
+  }
+}
