@@ -72,90 +72,86 @@
 \maketitle
 
 \begin{abstract}
-\noindent A neighbourhood-disagreement prior discovers $2.4\times$ more
-periodic orbits per unit compute than classifier-entropy baselines
-(paired $t = 38$, $p = 1.5\!\times\!10^{-11}$, ten seeds) in the equal-mass
-planar three-body problem. Guided search identifies four orbits in the
-Euler velocity section: two match Hristov \& Dmitra\v{s}inovi\'c (2025)
-stable-orbit catalog entries at $50$-digit precision --- an independent
-rediscovery validating the pipeline from a different starting point ---
-and two are not in any published catalog of $24{,}582$ free-fall or
-$971$ stable orbits. One of the unmatched orbits has a syzygy
-free-group word $(132)^{8}$ absent from the $971$-label
-stability-filtered topology catalog, suggesting a new family. All
-orbits close to residual $<10^{-47}$ under two independent
-high-precision integrators (heyoka $200$-bit MPFR Taylor and
-\texttt{mpmath} pure-Python Taylor at $30$ dps), ruling out
-integrator-specific spurious closure. The catalog cross-check also
-exposes a previously undocumented convention discrepancy in the
-Hristov (2025) catalog --- columns are Euler $(v_1, v_2, T, \Tstar)$ and
-not the free-fall $(x_3, y_3, T, \Tstar)$ that the README states ---
-which is invisible at $4$-digit comparison but collapses at
-$50$-digit identity.
+\noindent A neighbourhood-disagreement prior finds $2.4\times$ more
+periodic orbits per unit compute than classifier-entropy baselines in
+the equal-mass planar three-body problem (paired $t = 38$,
+$p = 1.5\!\times\!10^{-11}$, ten seeds). Guided search returns four
+orbits in the Euler velocity section. Two match entries in the Hristov
+\& Dmitra\v{s}inovi\'c (2025) stable-orbit catalog to $50$-digit
+precision, a rediscovery from a different starting prior that acts as
+an end-to-end check. Two are absent from both the published $24{,}582$
+free-fall catalog and the $971$ stable orbits. One of the unmatched
+orbits has syzygy free-group word $(132)^{8}$, which is not equivalent
+to any of the $971$ stability-filtered labels under the standard
+free-group quotient, consistent with a new family. All four orbits
+close to residual below $10^{-47}$ under two independent high-precision
+integrators (heyoka $200$-bit MPFR Taylor and \texttt{mpmath}
+pure-Python Taylor at $30$ dps), which rules out integrator-specific
+spurious closure. Reproducing the Hristov (2025) entries required
+recognising that the catalog columns follow the Euler-section
+convention $(v_1, v_2, T, \Tstar)$ rather than the free-fall convention
+$(x_3, y_3, T, \Tstar)$; the distinction is invisible at four-digit
+precision but decisive at fifty.
 \end{abstract}
 
 % =================================================================
 \section{Introduction}
 
-The three-body problem --- three point masses moving under mutual
-Newtonian gravity --- is the historical archetype of deterministic
+The three-body problem (three point masses moving under mutual
+Newtonian gravity) is the historical archetype of deterministic
 chaos. Periodic orbits in the equal-mass planar zero-angular-momentum
 case form the backbone of its bound invariant set, organise the
 heteroclinic web that scaffolds chaotic scattering, and serve as
-benchmarks for high-precision integrators. Catalogs of such orbits have
-grown by enumeration: \citet{Suvakov2013} produced thirteen families by
-hand-tuned grid search in $(v_1, v_2)$; the Li--Liao group at Shanghai
-Jiao Tong combined symplectic shooting with grid search to extend this
-to $695$~families \citep{LiLiao2017}; and \citet{Hristov2024Catalog}
+benchmarks for high-precision integrators. Catalogs of such orbits
+have grown by enumeration: \citet{Suvakov2013} produced thirteen
+families by hand-tuned grid search in $(v_1, v_2)$; the Li--Liao group
+at Shanghai Jiao Tong combined symplectic shooting with grid search to
+reach $695$~families \citep{LiLiao2017}; \citet{Hristov2024Catalog}
 pushed the catalog to $12{,}409$ distinct free-fall orbits ($24{,}582$
 initial conditions including duals) at scale-invariant period
 $\Tstar < 80$. \citet{Hristov2025Stable} filtered that catalog for
 linear stability, yielding $971$ stable orbits.
 
-Two trends in this literature motivate the present work. First, the
-classical hand-search strategy --- pick a family-specific symmetry,
-grid the invariant parameters --- relies on structural ansatzes and
-will miss orbits whose symmetries are not anticipated. Second, recent
-work on escape-basin structure \citep{Trani2024, Manwadkar2021} shows
-that ``isles of regularity'' --- bounded phase-space regions punctuated
-by periodic orbits --- concentrate on multi-class Wada boundaries
-\citep{GOY1983, MGOY1985, Aguirre2001, Poon1996, NusseYorke1992}.
-A learned surrogate of basin structure should therefore be a stronger
-prior for periodic-orbit search than uniform sampling, provided one can
-extract a signal that \emph{localises the boundary skeleton} rather
-than merely flagging classifier uncertainty.
+Hand-tuned grid search relies on structural ansatzes and misses orbits
+whose symmetries are not anticipated. Escape-basin analyses
+\citep{Trani2024, Manwadkar2021} place ``isles of regularity''
+(bounded phase-space regions punctuated by periodic orbits) on the
+multi-class Wada boundaries of the basin partition
+\citep{GOY1983, MGOY1985, Aguirre2001, Poon1996, NusseYorke1992}. A
+learned surrogate of basin structure can serve as a sharper sampling
+prior than uniform random or physics-symmetry grids, provided the
+signal it extracts tracks the boundary skeleton rather than generic
+classifier uncertainty.
 
-The point of departure for this paper is a small but consequential
-distinction. Where a basin classifier is \emph{uncertain} ---
-high-entropy in its softmax --- the locus is noisy and includes diffuse
-interior regions. Where its \emph{neighbours disagree on the hard
-label} --- a $k$-NN statistic on the labelled training grid --- the
-locus is specifically the basin boundary. The two families of
-uncertainty are different in principle (epistemic vs.\ aleatoric, in
-effect) and very different in practice. We make this distinction
-explicit, derive a label-disagreement prior $D_k(\vvec)$, and run a
-ten-seed paired-design ablation against the standard classifier-entropy
-baseline.
+That last qualifier is the point of departure. Where a basin
+classifier is \emph{uncertain} (high-entropy softmax) the locus is
+noisy and includes diffuse interior regions. Where its
+\emph{neighbours disagree on the hard label} (a $k$-NN statistic on
+the labelled training grid) the locus is specifically the basin
+boundary. The two families of uncertainty are different in principle
+(epistemic vs.\ aleatoric, in effect) and very different in practice.
+We define a label-disagreement prior $D_k(\vvec)$ and compare it
+head-to-head against classifier softmax entropy in a ten-seed
+paired-design ablation.
 
 \paragraph{Contributions.}
 (i)~A label-disagreement prior for ML-guided periodic-orbit discovery,
 grounded in basin-boundary theory.
-(ii)~A ten-seed paired-design study showing $D_k$ outperforms entropy
-by $2.4\times$ in verified-orbit yield ($p = 1.5\!\times\!10^{-11}$,
+(ii)~A ten-seed paired-design study: $D_k$ outperforms entropy by
+$2.4\times$ in verified-orbit yield ($p = 1.5\!\times\!10^{-11}$,
 Cohen's $d = 12.0$, win rate $10/10$).
-(iii)~Discovery and high-precision verification of four periodic
-orbits, two of which are independent rediscoveries of Hristov 2025
-entries (validating the pipeline) and two of which are absent from
-published catalogs; all close below $10^{-47}$ under two independent
-integrators.
-(iv)~A topological classification by syzygy free-group words
-establishing that one of the new orbits has a topology absent from the
-$971$ published stability-filtered labels.
-(v)~A previously unreported convention discrepancy in the Hristov (2025)
-catalog: columns are $(v_1, v_2, T, \Tstar)$ in Euler convention, not
-$(x_3, y_3, T, \Tstar)$ in free-fall convention as the README states.
-The discrepancy is invisible at $4$-decimal precision but collapses to
-exact identity at $50$ digits.
+(iii)~High-precision verification of four periodic orbits: two
+rediscoveries of Hristov 2025 entries (end-to-end pipeline check) and
+two that are absent from the published catalogs. All four close below
+$10^{-47}$ under two independent integrators.
+(iv)~Topological classification by syzygy free-group words, placing
+one of the new orbits in a length-$24$ word $(132)^{8}$ that is not
+equivalent to any of the $971$ published stability-filtered labels.
+(v)~Identification of the convention used by the Hristov (2025)
+catalog: columns are $(v_1, v_2, T, \Tstar)$ in the Euler section, not
+$(x_3, y_3, T, \Tstar)$ in free-fall, a distinction that is invisible
+at four-decimal precision but collapses to exact identity at $50$
+digits.
 
 % =================================================================
 \section{Related Work}
@@ -164,12 +160,12 @@ exact identity at $50$ digits.
 \citet{Moore1993} introduced the figure-eight braid and
 \citet{ChencinerMontgomery2000} proved its existence.
 \citet{Suvakov2013} produced thirteen families by hand-tuned search.
-\citet{LiLiao2017} extended this to $695$ families with grid search and
-symplectic shooting at the Euler velocity section. The Hristov group
-\citep{Hristov2024Catalog} pushed the free-fall catalog to $12{,}409$
-distinct orbits and the stable subset \citep{Hristov2025Stable} to
-$971$. Both Hristov works publish initial conditions to $80$ decimal
-digits.
+\citet{LiLiao2017} extended this to $695$ families with grid search
+and symplectic shooting at the Euler velocity section. The Hristov
+group \citep{Hristov2024Catalog} pushed the free-fall catalog to
+$12{,}409$ distinct orbits and the stable subset
+\citep{Hristov2025Stable} to $971$. Both Hristov works publish initial
+conditions to $80$ decimal digits.
 
 \paragraph{Basin-boundary theory in dynamical systems.}
 \citet{GOY1983, MGOY1985} introduced the fractal-basin-boundary
@@ -185,9 +181,9 @@ map are precisely where periodic orbits accumulate.
 \paragraph{Machine learning in celestial mechanics.}
 \citet{Breen2020} trained a residual MLP on chaotic three-body
 trajectories. \citet{Liao2022} surveyed ML-aided periodic-orbit search
-via classification of escape outcomes. \citet{Manwadkar2021} established
-the L\'evy-flight statistics of bound triples and \citet{Trani2024}
-mapped isles of regularity in the velocity section.
+via classification of escape outcomes. \citet{Manwadkar2021}
+established the L\'evy-flight statistics of bound triples and
+\citet{Trani2024} mapped isles of regularity in the velocity section.
 \citet{Shena2021, Valle2024} learned basin classifiers for general
 dynamical systems. None of these works extracts a label-disagreement
 prior nor uses one to drive a periodic-orbit shooter.
@@ -196,9 +192,9 @@ prior nor uses one to drive a periodic-orbit shooter.
 Entropy-based active learning is a standard acquisition strategy.
 We position label-disagreement as a structurally different family of
 uncertainty: entropy is a smooth pointwise function of the softmax,
-agnostic to the local layout of decision boundaries. Disagreement is a
-local geometric statistic on the training labels themselves and peaks
-at multi-class boundaries.
+agnostic to the local layout of decision boundaries. Disagreement is
+a local geometric statistic on the training labels themselves and
+peaks at multi-class boundaries.
 
 % =================================================================
 \section{Method}
@@ -219,7 +215,7 @@ momentum $\sum_i \pvec_i = 0$, and zero total angular momentum
 $\sum_i \qvec_i \times \pvec_i = 0$.
 
 \paragraph{Euler velocity section.}
-The pipeline searches the Euler section \citep{LiLiao2017}: bodies at
+The search runs on the Euler section \citep{LiLiao2017}: bodies at
 $\qvec_1(0) = (-1, 0)$, $\qvec_2(0) = (+1, 0)$, $\qvec_3(0) = (0, 0)$,
 with momenta $\pvec_1(0) = \pvec_2(0) = (v_1, v_2)$ and
 $\pvec_3(0) = -2(v_1, v_2)$. The two scalars $(v_1, v_2)$ parametrise
@@ -231,9 +227,9 @@ scale-invariant period is $\Tstar = T \, |E|^{3/2}$.
 
 A $500\!\times\!500$ grid in $(v_1, v_2) \in [-0.8, 0.8]^2$ is
 integrated at float64 precision with a sixth-order symplectic Yoshida
-integrator \citep{Yoshida1990} at step $h = 0.002$ until either (a) one
-of the three pairs has positive two-body energy and is separating from
-the third body --- a labelled \emph{escape} of body $i$ --- or (b) the
+integrator \citep{Yoshida1990} at step $h = 0.002$ until either (a)
+one of the three pairs has positive two-body energy and is separating
+from the third body (a labelled \emph{escape} of body $i$), or (b) the
 horizon $t_{\max} = 500$ is reached, in which case the cell is
 labelled \emph{bound}. The resulting four-class label field
 $y(\vvec) \in \{1, 2, 3, B\}$ is the ground truth for classifier
@@ -300,14 +296,14 @@ define
 \end{equation}
 $D_k$ is bounded by $1 - 1/k$ (here $5/6$ for $k = 6$); it equals zero
 in label-pure regions and saturates at multi-class meeting points.
-Crucially, $D_k$ is not derived from the softmax: it uses the hard
+Unlike $H$, $D_k$ is not derived from the softmax: it uses the hard
 ground-truth labels of the training grid directly, so it is sensitive
-to the layout of the basin boundaries themselves rather than to
-classifier temperature.
+to the layout of the basin boundaries rather than to classifier
+temperature.
 
-The top $50$ candidates under each prior, subject to a repulsion radius
-$|\Delta \vvec| > 0.01$ to prevent collapse onto a single orbit, are
-forwarded to the shooting refiner.
+The top $50$ candidates under each prior, subject to a repulsion
+radius $|\Delta \vvec| > 0.01$ to prevent collapse onto a single
+orbit, are forwarded to the shooting refiner.
 
 \subsection{Shooting and Levenberg--Marquardt refinement}
 
@@ -321,14 +317,14 @@ Levenberg--Marquardt refiner that minimises the closure residual
   \label{eq:closure-residual}
 \end{equation}
 over $(v_1, v_2, T)$ via finite-difference Jacobian at step
-$\delta = 10^{-6}$ with $N_{\mathrm{ref}} = 10^{4}$ symplectic substeps.
-A candidate is provisionally verified when $R < 10^{-10}$ within
-$\le\!50$ Levenberg--Marquardt iterations; we additionally require the
-residual to plateau at the double-precision floor under a resolution
-stress-test
+$\delta = 10^{-6}$ with $N_{\mathrm{ref}} = 10^{4}$ symplectic
+substeps. A candidate is provisionally verified when $R < 10^{-10}$
+within $\le\!50$ Levenberg--Marquardt iterations; we additionally
+require the residual to plateau at the double-precision floor under a
+resolution stress-test
 $N_{\mathrm{ref}} \in \{10^4, 3\!\times\!10^4, 10^5, 3\!\times\!10^5, 10^6\}$,
-which rejects long-lived near-periodic trajectories that masquerade as
-orbits at one step size.
+which rejects long-lived near-periodic trajectories that masquerade
+as orbits at one step size.
 
 \subsection{High-precision verification}
 \label{sec:hp}
@@ -367,10 +363,11 @@ The $24{,}582$ Hristov 2024 free-fall initial conditions
 Euler-section ICs: a generic periodic orbit visits one section but not
 both. We therefore forward-integrate every catalog entry under
 Yoshida-$6$, scan the trajectory for collinear Euler crossings, and
-apply the canonical scale transformation $\lambda = 2/d_{\mathrm{half}}$
-with $T_{\mathrm{can}} = \lambda^{3/2}\, T_{\mathrm{Hristov}}$. The
-closest $(v_1, v_2, T_{\mathrm{can}})$ to each of our orbits is
-recorded, under the four sign symmetries
+apply the canonical scale transformation
+$\lambda = 2/d_{\mathrm{half}}$ with
+$T_{\mathrm{can}} = \lambda^{3/2}\, T_{\mathrm{Hristov}}$. The closest
+$(v_1, v_2, T_{\mathrm{can}})$ to each of our orbits is recorded,
+under the four sign symmetries
 $\vvec \mapsto (\pm v_1, \pm v_2)$. A STRONG match requires
 $|\Delta \vvec| < 10^{-4}$ and $|\Delta T|/T < 10^{-3}$; a WEAK match
 relaxes both to $10^{-2}$.
@@ -378,26 +375,26 @@ relaxes both to $10^{-2}$.
 \paragraph{Hristov 2025 direct identity check.}
 The $971$ Hristov 2025 stable entries are compared at $50$-digit
 precision against each of our orbits, after recognising that the
-catalog columns are in Euler convention (see \S\ref{sec:hristov} for
-the convention finding).
+catalog columns are in Euler convention (see \S\ref{sec:hristov}).
 
 \paragraph{Topology via syzygy words.}
 A \emph{syzygy} is a configuration where the three bodies are
-collinear; between consecutive syzygies one of the three bodies is the
-midpoint of the line. The \emph{syzygy word} of a periodic orbit is
-the sequence of midpoint-body labels $\{1, 2, 3\}$ over one period.
-Two orbits share a topological family iff their words are equivalent
-under the free-group quotient by cyclic rotation, body permutation
-$\sigma \in S_3$, and time reversal \citep{Moore1993, Montgomery2015}.
-We detect syzygies by sign changes of the shape-sphere signed-area
-coordinate $w = (\qvec_1 - \qvec_3) \times (\qvec_2 - \qvec_3)$ at
+collinear; between consecutive syzygies one of the three bodies is
+the midpoint of the line. The \emph{syzygy word} of a periodic orbit
+is the sequence of midpoint-body labels $\{1, 2, 3\}$ over one
+period. Two orbits share a topological family iff their words are
+equivalent under the free-group quotient by cyclic rotation, body
+permutation $\sigma \in S_3$, and time reversal
+\citep{Moore1993, Montgomery2015}. We detect syzygies by sign changes
+of the shape-sphere signed-area coordinate
+$w = (\qvec_1 - \qvec_3) \times (\qvec_2 - \qvec_3)$ at
 $N_{\mathrm{syz}} = 5\!\times\!10^4$ Yoshida-$6$ steps per period and
-identify the midpoint at each crossing. Canonicalisation puts the word
-in its lexicographically smallest cyclic rotation under the canonical
-body permutation; equivalence is then a string comparison.
-Implementation is validated by self-identification of orbits C and D
-against their independently established Hristov 2025 matches (both
-PASS) before A and B are tested.
+identify the midpoint at each crossing. Canonicalisation puts the
+word in its lexicographically smallest cyclic rotation under the
+canonical body permutation; equivalence is then a string comparison.
+The implementation is validated by self-identification of orbits C
+and D against their independently established Hristov 2025 matches
+(both PASS) before A and B are tested.
 
 % =================================================================
 \section{Experimental Setup}
@@ -409,8 +406,8 @@ $22.04$ LTS, CUDA $12.1$, JAX $0.4.34$.
 
 \paragraph{Integration.}
 Float64 symplectic Yoshida-$6$ ($h = 2 \times 10^{-3}$,
-$5 \times 10^{4}$ steps per period) for the basin map and provisional
-verification; heyoka $7.10.1$ at $200$-bit MPFR with
+$5 \times 10^{4}$ steps per period) for the basin map and
+provisional verification; heyoka $7.10.1$ at $200$-bit MPFR with
 $\mathrm{tol} = 10^{-50}$ for HP Newton; \texttt{mpmath} $1.3.0$ at
 $30$ dps for the dual-tool cross-check.
 
@@ -426,57 +423,57 @@ distinct orbits is $|\Delta \vvec| > 0.01$ in Euler coordinates.
 Primary metric: $n_{\mathrm{verif}}$, the number of distinct verified
 orbits per run of $50$ shot candidates (modulo $S_3$ body-label
 symmetry). Secondary metrics: closure residuals at HP, agreement of
-the two HP integrators, and catalog match status under the cross-checks
-of \S\ref{sec:catalog-checks}.
+the two HP integrators, and catalog match status under the
+cross-checks of \S\ref{sec:catalog-checks}.
 
 % =================================================================
 \section{Results}
 
 \subsection{Headline: label-disagreement wins across seeds}
 
-Figure~\ref{fig:tier1} reports the ten-seed paired-design ablation.
-Label-disagreement achieves a mean of $44.0$ verified orbits per run
-($95\%$ CI $[42.99, 45.01]$, std $1.41$) against classifier entropy at
-$18.2$ verified orbits ($95\%$ CI $[17.54, 18.86]$, std $0.92$). The
-paired difference per seed is
+Across ten seeds, label-disagreement returns $44.0$ verified orbits
+on average ($95\%$ CI $[42.99, 45.01]$, std $1.41$); classifier
+entropy returns $18.2$ ($95\%$ CI $[17.54, 18.86]$, std $0.92$). The
+paired per-seed difference is
 $\{24, 31, 24, 25, 27, 25, 25, 26, 27, 24\}$ (mean $+25.8$, std
 $2.15$); paired $t = 37.95$, one-sided $p = 1.5 \times 10^{-11}$;
-Cohen's $d = 12.0$; win rate $10/10$. The gap is large not only on
-average ($2.4\times$) but uniformly across seeds: the worst seed for
-label-disagreement still beats the best seed for entropy by $14$
-orbits. The within-method variance ($1.4$ and $0.9$) is two orders of
-magnitude below the between-method gap ($25.8$), placing the ranking
-outside any reasonable statistical doubt.
+Cohen's $d = 12.0$; win rate $10/10$. The gap is uniform, not just
+large on average: the worst seed for label-disagreement still beats
+the best seed for entropy by $14$ orbits. Within-method variance
+($1.4$ and $0.9$) is two orders of magnitude below the between-method
+gap ($25.8$), placing the ranking outside any reasonable statistical
+doubt. Figure~\ref{fig:tier1} plots the paired design.
 
 \begin{figure}[!htb]
 \centering
 \includegraphics[width=0.7\linewidth]{ml_prior_ci_paper.pdf}
-\caption{Ten-seed paired ablation of the two ML priors. Each marker is
-one seed's verified-orbit count for one method (seeds $0$--$9$);
+\caption{Ten-seed paired ablation of the two ML priors. Each marker
+is one seed's verified-orbit count for one method (seeds $0$--$9$);
 horizontal bars show the per-method mean and shaded region the $95\%$
 CI under Student-$t$ with $n = 10$ ($t_{\mathrm{crit}} = 2.26$).
 \texttt{label\_disagreement} (green, $44.0\pm 1.0$) vs.\
 \texttt{classifier\_entropy} (blue, $18.2\pm 0.7$). Paired $t = 37.95$,
-$p = 1.5\!\times\!10^{-11}$, Cohen's $d = 12.0$, win rate $10/10$. The
-CIs do not overlap; the gap is $\sim\!25\sigma$.}
+$p = 1.5\!\times\!10^{-11}$, Cohen's $d = 12.0$, win rate $10/10$.
+The CIs do not overlap; the gap is $\sim\!25\sigma$.}
 \label{fig:tier1}
 \end{figure}
 
 \subsection{Four candidate orbits at 50-digit precision}
 
-The headline pipeline at the winning prior recovers four periodic
-orbits (Table~\ref{tab:hp-ic}, Fig.~\ref{fig:gallery}). All four pass
-LM closure at $R < 10^{-10}$, survive the resolution stress-test, and
-lift to $50$ digits under heyoka Newton; their HP closure residuals
-range from $4.15 \times 10^{-49}$ (orbit C) to $5.34 \times 10^{-48}$
+At the winning prior the pipeline recovers four periodic orbits
+(Table~\ref{tab:hp-ic}, Fig.~\ref{fig:gallery}). All four pass LM
+closure at $R < 10^{-10}$, survive the resolution stress-test, and
+lift to $50$ digits under heyoka Newton; HP closure residuals range
+from $4.15 \times 10^{-49}$ (orbit C) to $5.34 \times 10^{-48}$
 (orbit A).
 
 \begin{table}[!htb]
 \centering
-\caption{Four candidate orbits at the Euler velocity section, $50$-digit
-HP-refined initial conditions. $E = 3(v_1^2+v_2^2) - 5/2$ is the
-conserved energy; $\Tstar = T |E|^{3/2}$ is the scale-invariant period;
-$r_{\min}$ is the minimum pair separation. ``Verdict'' anticipates
+\caption{Four candidate orbits at the Euler velocity section,
+$50$-digit HP-refined initial conditions.
+$E = 3(v_1^2+v_2^2) - 5/2$ is the conserved energy;
+$\Tstar = T |E|^{3/2}$ is the scale-invariant period; $r_{\min}$ is
+the minimum pair separation. ``Verdict'' anticipates
 \S\ref{sec:novelty}--\S\ref{sec:topo}.}
 \label{tab:hp-ic}
 \footnotesize
@@ -511,15 +508,14 @@ the longest at $\Tstar = 73.84$.}
 Table~\ref{tab:hp-dual} reports the dual-integrator HP cross-check.
 heyoka $200$-bit and \texttt{mpmath} $30$-dps Taylor agree on the
 closure residual to better than $5 \times 10^{-48}$ on every orbit.
-The two implementations share no code paths --- compiled MPFR vs.\
-interpreted Python; symbolic Taylor compilation vs.\ recursive
-forward-differencing; different step-size control --- so any common
-error must be a true property of the trajectory rather than a property
-of either implementation. For all practical purposes, ``closure at
-$10^{-48}$'' means ``indistinguishable from an exact periodic solution
-at any double-precision subsequent integration''.
-Figure~\ref{fig:hp-dual} (in the appendix) plots the per-component
-residuals.
+The two implementations share no code paths (compiled MPFR vs.\
+interpreted Python, symbolic Taylor compilation vs.\ recursive
+forward-differencing, different step-size control), so any common
+residual is a property of the trajectory rather than of either
+implementation. In practice ``closure at $10^{-48}$'' means
+indistinguishable from an exact periodic solution at any subsequent
+double-precision integration. Figure~\ref{fig:hp-dual} in the
+appendix plots the per-component residuals.
 
 \begin{table}[!htb]
 \centering
@@ -549,26 +545,28 @@ D & $81.08361\ldots$ & $4.440\times 10^{-48}$ & $4.296\times 10^{-50}$ & $3.92$ 
 \label{sec:novelty}
 
 \paragraph{Hristov 2024 sweep (A, B).}
-The full forward-integration sweep of all $24{,}582$ Hristov 2024
-free-fall initial conditions returns zero STRONG matches and zero
-WEAK matches against A and B at any of the four sign-symmetry images.
-Of the $24{,}582$ entries, $13{,}245$ have at least one Euler
-collinear crossing; the minimum $|\Delta \vvec|$ from that
-$13{,}245$-point Euler-shadow set is $0.621$ for A and $0.602$ for B.
-The number of Hristov 2024 entries within $1\%$ of A's or B's $\Tstar$
-is $27$ (A) and $\sim\!50$ (B); each is exhaustively forward-integrated.
-Wall time for the entire sweep is $320$\,s on $12$ CPU threads. A and
-B are therefore not sampling-equivalent to any Hristov 2024 entry
-within $|\Delta \vvec| < 0.5$. Figure~\ref{fig:catalog-scan} plots the
+The forward-integration sweep of all $24{,}582$ Hristov 2024 free-fall
+initial conditions returns zero STRONG and zero WEAK matches against
+A and B at any of the four sign-symmetry images. Of the $24{,}582$
+entries, $13{,}245$ have at least one Euler collinear crossing; the
+minimum $|\Delta \vvec|$ from that $13{,}245$-point Euler-shadow set
+is $0.621$ for A and $0.602$ for B. The number of Hristov 2024
+entries within $1\%$ of A's or B's $\Tstar$ is $27$ (A) and $\sim\!50$
+(B); each is exhaustively forward-integrated. Wall time for the full
+sweep is $320$\,s on $12$ CPU threads. A and B are therefore not
+sampling-equivalent to any Hristov 2024 entry within
+$|\Delta \vvec| < 0.5$. Figure~\ref{fig:catalog-scan} plots the
 closest Hristov match across $\Tstar$.
 
 \paragraph{Hristov 2025 identity at 50 digits (C, D).}
 \label{sec:hristov}
-A direct comparison of C and D against the Hristov 2025 catalog under
-the README's documented free-fall convention fails: integrating row $6$
-as a free-fall IC gives a closure residual of $2.43$ and zero
-Euler-section crossings. Reinterpreting the columns as Euler
-$(v_1, v_2, T, \Tstar)$ closes to
+Comparison against the Hristov 2025 catalog required verifying the
+column convention: the published tables use Euler-section coordinates
+$(v_1, v_2, T, \Tstar)$, not the free-fall coordinates
+$(x_3, y_3, T, \Tstar)$ implied by the header of the earlier 2024
+release. Under the free-fall reading, integrating row $6$ gives a
+closure residual of $2.43$ and zero Euler-section crossings. Under
+the Euler reading,
 \begin{align*}
 \text{C vs.\ row 6 (Euler):}\quad &
   \Norm{R} = 4.15\times 10^{-49},\quad
@@ -577,24 +575,23 @@ $(v_1, v_2, T, \Tstar)$ closes to
   \Norm{R} = 4.44\times 10^{-48},\quad
   |\Delta \vvec|_{\min} = 4.64\times 10^{-51}.
 \end{align*}
-At $50$-digit precision, the initial conditions are
-\emph{indistinguishable}. C and D are independent rediscoveries of
-Hristov 2025 \#0006 and \#0011 respectively, located by our pipeline
-from a different starting prior and a different search strategy than
-the Hristov stability search. Their match validates the pipeline.
+At $50$-digit precision the initial conditions are indistinguishable.
+C and D are independent rediscoveries of Hristov 2025 \#0006 and
+\#0011, located from a different starting prior than the Hristov
+stability search; the match acts as an end-to-end check on the
+pipeline.
 
 \paragraph{Convention finding.}
-Three pieces of evidence establish that the Hristov 2025 catalog
-columns are Euler $(v_1, v_2, T, \Tstar)$, not the free-fall
-$(x_3, y_3, T, \Tstar)$ that the README claims: (i) Hristov 2024 row
-$1$ integrated as free-fall closes to $5.85 \times 10^{-41}$ (the
-2024 catalog \emph{is} free-fall, as documented); (ii) Hristov 2025
+Three pieces of evidence pin down the convention of the Hristov 2025
+catalog as Euler $(v_1, v_2, T, \Tstar)$. First, Hristov 2024 row $1$
+integrated as free-fall closes to $5.85 \times 10^{-41}$, confirming
+the $2024$ catalog is free-fall as documented. Second, Hristov 2025
 row $6$ integrated as free-fall does not close (residual $2.43$) and
-visits zero Euler crossings; (iii) Hristov 2025 row $6$ reinterpreted
+visits zero Euler crossings. Third, Hristov 2025 row $6$ reinterpreted
 as Euler closes to $4.15 \times 10^{-49}$ and matches our orbit C to
-$50$ digits. The discrepancy is invisible at $4$-decimal direct
-comparison (where the coincidental Euler reinterpretation looks
-plausible) but collapses at $50$ digits.
+$50$ digits. The discrepancy is invisible at four-decimal precision
+(the Euler reinterpretation looks like a coincidence and free-fall
+``almost'' closes at low precision) and decisive at fifty.
 
 \begin{figure}[!htb]
 \centering
@@ -624,17 +621,17 @@ gate passed, the verdicts for A and B are:
 \paragraph{Orbit A: new family.}
 A's word $(132)^{8}$ has length $24$; under cyclic rotation, $S_3$
 body permutation, and time reversal it does not match any of the
-$971$ Hristov 2025 syzygy labels. This is consistent with the IC-level
-null result: A does not overlap with the Hristov-stable coverage on
-either the IC axis or the topology axis.
+$971$ Hristov 2025 syzygy labels. This is consistent with the
+IC-level null result: A does not overlap with the Hristov-stable
+coverage on either the IC axis or the topology axis.
 
 \paragraph{Orbit B: known family, new orbit.}
 B's word $(312)^{14}$ of length $42$ is canonically equivalent to
 Hristov 2025 rows $6$ and $7$ (both $(213)^{14}$ before
 canonicalisation). Row $6$ is our orbit C; row $7$ has $\Tstar$ and
-ICs distinct from B's. B is therefore a new orbit \emph{within} the
-known $(132)^{14}$-family, distinct from both row $6$ and row $7$ at
-the IC level.
+ICs distinct from B's. B is therefore a new orbit within the known
+$(132)^{14}$-family, distinct from both row $6$ and row $7$ at the
+IC level.
 
 \begin{table}[!htb]
 \centering
@@ -662,25 +659,27 @@ D & $48$ & $(132)^{16}$ & row $11$ (identity validation)  \\
 \begin{figure}[!htb]
 \centering
 \includegraphics[width=0.85\linewidth]{syzygy_word_comparison_paper.pdf}
-\caption{Syzygy word comparison. Top row: our four orbits as repeating
-three-letter patterns over one period. Bottom row: closest matching
-rows from the Hristov 2025 stability-filtered syzygy catalog ($971$
-labels). A's length-$24$ word $(132)^{8}$ is not equivalent under
-cyclic + $S_3$ + time reversal to any of the $971$. B's length-$42$
-word $(312)^{14}$ is equivalent to rows $6$ and $7$. C self-identifies
-to row $6$ and D to row $11$, validating the implementation.}
+\caption{Syzygy word comparison. Top row: our four orbits as
+repeating three-letter patterns over one period. Bottom row: closest
+matching rows from the Hristov 2025 stability-filtered syzygy catalog
+($971$ labels). A's length-$24$ word $(132)^{8}$ is not equivalent
+under cyclic + $S_3$ + time reversal to any of the $971$. B's
+length-$42$ word $(312)^{14}$ is equivalent to rows $6$ and $7$. C
+self-identifies to row $6$ and D to row $11$, validating the
+implementation.}
 \label{fig:syzygy}
 \end{figure}
 
 \subsection{Summary verdicts}
 
-The combined IC-level and topology-level verdicts are: \textbf{A} is a
-new orbit and a new topological family; \textbf{B} is a new orbit in a
-known family (shared with C and Hristov row $7$); \textbf{C} is a
-rediscovery of Hristov 2025 \#0006; \textbf{D} is a rediscovery of
-Hristov 2025 \#0011. The two rediscoveries validate the pipeline; the
-two new orbits (A in particular) are the discovery contribution.
-Figure~\ref{fig:summary} compresses these verdicts into a one-page card.
+The combined IC-level and topology-level verdicts are: \textbf{A} is
+a new orbit and a new topological family; \textbf{B} is a new orbit
+in a known family (shared with C and Hristov row $7$); \textbf{C} is
+a rediscovery of Hristov 2025 \#0006; \textbf{D} is a rediscovery of
+Hristov 2025 \#0011. The two rediscoveries act as end-to-end checks;
+the two new orbits (A in particular) are the discovery contribution.
+Figure~\ref{fig:summary} compresses these verdicts into a one-page
+card.
 
 \begin{figure}[!htb]
 \centering
@@ -702,74 +701,71 @@ methodology validated at $\geq\!25\sigma$ separation between priors.}
 Both priors derive from the same labelled basin map, but they sense
 different geometric objects. Classifier entropy is a smooth pointwise
 function of the softmax output; it saturates at $\log K$ wherever the
-softmax is diffuse, including locally noisy interior regions where the
-classifier hedges several plausible labels. Label disagreement is a
-local geometric statistic on the training labels themselves; it is
-zero in label-pure regions and saturates only at multi-class meeting
-points of the basin partition. The theory of chaotic scattering
-\citep{GOY1983, MGOY1985, NusseYorke1992, Poon1996} places periodic
-orbits on the stable manifolds of unstable periodic saddles densely
-intersected by the Wada boundary; the deepest such intersections are
-multi-class meeting points. The empirical $2.4\times$ advantage of
-$D_k$ over $H$ reflects this: $D_k$ peaks where multi-class meetings
-peak; entropy does not distinguish a two-class boundary from a
-three-class intersection or a noisy interior point. The two priors
-correspond to two different families of uncertainty (epistemic vs.\
-aleatoric, in effect), and the geometry of the periodic-orbit set
-favours the former.
+softmax is diffuse, including locally noisy interior regions where
+the classifier hedges between several plausible labels. Label
+disagreement is a local geometric statistic on the training labels
+themselves; it is zero in label-pure regions and saturates only at
+multi-class meeting points of the basin partition. The theory of
+chaotic scattering \citep{GOY1983, MGOY1985, NusseYorke1992, Poon1996}
+places periodic orbits on the stable manifolds of unstable periodic
+saddles, densely intersected by the Wada boundary; the deepest such
+intersections are multi-class meeting points. The $2.4\times$ gap
+between $D_k$ and $H$ reflects this: $D_k$ peaks where multi-class
+meetings peak; $H$ does not distinguish a two-class boundary from a
+three-class intersection or from a noisy interior point. The two
+priors correspond to two different families of uncertainty (epistemic
+vs.\ aleatoric, in effect), and the geometry of the periodic-orbit
+set favours the former.
 
-\paragraph{The convention discrepancy.}
+\paragraph{The convention finding.}
 The Hristov 2025 catalog columns are $(v_1, v_2, T, \Tstar)$ in Euler
-convention --- not $(x_3, y_3, T, \Tstar)$ in free-fall convention as
-the README states. The discrepancy is consistent with the 2025 catalog
-being a stability-filtered subset of the 2024 catalog, recast in the
-Li--Liao section preferred by the linear-stability community, with the
-README simply not updated to match. This is invisible at $4$-decimal
-precision (the coincidental Euler reinterpretation looks plausible
-and the free-fall integration ``almost'' closes at low precision) but
-collapses at $50$ digits. It is also a useful general lesson: catalog
-matches that fail at publication precision under the documented
-convention often succeed at HP under an alternative convention, and
-the audit cost of checking is small relative to the cost of either
-falsely claiming novelty (because a match was missed) or falsely
-claiming identity (because a coincidence was over-read).
+convention. The convention is consistent with the 2025 catalog being
+a stability-filtered subset of the 2024 catalog, recast in the
+Li--Liao section preferred by the linear-stability community. The
+distinction is invisible at four-decimal precision (the Euler
+reinterpretation looks plausible and free-fall integration ``almost''
+closes at low precision) and decisive at fifty. The wider lesson:
+catalog matches that fail at publication precision under one
+convention often succeed at HP under another, and the cost of
+checking both is small relative to the cost of either falsely
+claiming identity (because a coincidence was over-read) or falsely
+claiming discovery (because a match was missed).
 
 \paragraph{Limitations.}
-(i)~The ablation is at Tier 1: a single classifier architecture, a
-single $k$ for the $D_k$ prior, and one randomisation axis (training
-seed). Architecture sweeps (transformer, CNN, deep sets), $k$ sweeps,
-and decision-boundary radius vs.\ static-$k$ comparisons are deferred.
+(i)~The ablation fixes a single classifier architecture, a single
+$k$ for the $D_k$ prior, and one randomisation axis (training seed).
+Architecture sweeps (transformer, CNN, deep sets), $k$ sweeps, and
+decision-boundary radius vs.\ static-$k$ comparisons are deferred.
 The $2.4\times$ ratio is established for the headline configuration;
 generalisation to other hyperparameters is a natural follow-up.
-(ii)~A's novelty claim rests on the $971$ stability-filtered topology
-labels; the full Hristov 2024 ($12{,}409$ distinct orbits) topology
-catalog has not been cross-checked. If a length-$24$ $(132)^{8}$ entry
-exists in the unstable-orbit subset of 2024, A would be reclassified
-as a hyperbolic rediscovery rather than a new family. The IC-level
-sweep already rules out a numerical match within
+(ii)~A's new-family claim rests on the $971$ stability-filtered
+topology labels; the full Hristov 2024 ($12{,}409$ distinct orbits)
+topology catalog has not been cross-checked. If a length-$24$
+$(132)^{8}$ entry exists in the unstable-orbit subset of 2024, A
+would be reclassified as a hyperbolic rediscovery rather than a new
+family. The IC-level sweep already rules out a numerical match within
 $|\Delta \vvec| < 0.6$ in the appropriate $\Tstar$ shell, so any such
-match would require a different section sampling.
+match would have to live in a different section sampling.
 (iii)~All four orbits live in the Euler velocity section. Periodic
-orbits that exclusively visit the free-fall section (without an Euler
-crossing) are outside our search space; the pipeline could be rerun on
-the free-fall section directly, but the basin map and classifier would
-need to be retrained.
+orbits that visit only the free-fall section without an Euler
+crossing are outside the search space; the pipeline could be rerun on
+the free-fall section directly, but the basin map and classifier
+would need to be retrained.
 
 % =================================================================
 \section{Conclusion}
 
-A label-disagreement prior on a learned basin classifier discovers
+A label-disagreement prior on a learned basin classifier finds
 $2.4\times$ more periodic orbits per unit compute than a
 classifier-entropy baseline at $p = 1.5 \times 10^{-11}$ and Cohen's
 $d = 12.0$ across ten seeds. Applied to the planar equal-mass
-zero-angular-momentum three-body problem, the pipeline produces four
-periodic orbits at $50$-digit precision, two of which are independent
-rediscoveries of Hristov (2025) entries (validating the pipeline) and
-two of which are absent from $24{,}582$ Hristov 2024 free-fall entries
-and $971$ Hristov 2025 stable entries. One of the new orbits has a
-syzygy free-group word $(132)^{8}$ absent from the published
-$971$-label topology catalog, indicating a previously uncatalogued
-stable family in the equal-mass system.
+zero-angular-momentum three-body problem, it returns four periodic
+orbits at $50$-digit precision: two are rediscoveries of Hristov
+(2025) entries and two are absent from $24{,}582$ Hristov 2024
+free-fall entries and $971$ Hristov 2025 stable entries. One of the
+new orbits carries a syzygy word $(132)^{8}$ not equivalent to any of
+the $971$ stability-filtered labels, consistent with a previously
+uncatalogued stable family in the equal-mass system.
 
 % =================================================================
 \bibliographystyle{unsrtnat}
@@ -781,14 +777,53 @@ stable family in the equal-mass system.
 
 \begin{figure}[!htb]
 \centering
-\includegraphics[width=0.7\linewidth]{hp_dual_tool_residuals_paper.pdf}
-\caption{Per-component HP closure residuals for the four orbits under
-heyoka $200$-bit (filled) and mpmath $30$-dps Taylor (open). Vertical
-axis is $\log_{10} R$. All residuals are below $10^{-47}$, far beneath
-the publication gate $10^{-30}$. The two integrators share no code
-paths; agreement at $\sim\!10^{-48}$ closes the
-integrator-specific-bug loophole.}
+\includegraphics[width=0.85\linewidth]{hp_dual_tool_residuals_paper.pdf}
+\caption{Dual-integrator high-precision closure residuals for the
+four orbits. Bars are $\log_{10}\|R\|$ per orbit under heyoka
+($200$-bit MPFR Taylor, blue) and \texttt{mpmath} (pure-Python Taylor
+at $30$ dps, orange); values are annotated above each bar. The dashed
+line at $y = 10^{-30}$ marks the publication gate used by the
+stability literature. All residuals sit $17$--$20$ orders of magnitude
+below the gate, and the two integrators agree to within
+$\sim\!5\times 10^{-48}$.}
 \label{fig:hp-dual}
 \end{figure}
+
+Figure~\ref{fig:hp-dual} shows the closure residual $\|R\|$ for each
+of the four orbits, verified independently by two high-precision
+integrators. heyoka is a compiled symbolic Taylor integrator running
+at $200$-bit MPFR precision; \texttt{mpmath} is a pure-Python
+recursive Taylor forward-differencing path at $30$ decimal digits.
+The two share no code: different languages, different step-size
+controllers, different number representations. Running both is a
+standard way to rule out integrator-specific spurious closure (a
+common failure mode in long-period symplectic runs, where a single
+Jacobian finite-difference loophole or denormal underflow can make a
+non-periodic orbit look periodic in one code but not in another).
+
+Reading the figure: each orbit has a paired blue/orange bar. The
+$y$-axis is $\log_{10}$ of the Euclidean closure residual after one
+full period, in the same $12$-coordinate state space
+$(\qvec_1, \qvec_2, \qvec_3, \pvec_1, \pvec_2, \pvec_3)$ used in the
+shooting equations. Lower bars mean tighter closure. The horizontal
+dashed line at $10^{-30}$ is the gate convention used by the Hristov
+catalog: orbits are published when double-precision integration
+cannot distinguish them from an exact periodic solution to within a
+few $\sigma$ of the IEEE 754 floor. The gate is well below machine
+epsilon ($\sim\!10^{-16}$) and only reachable under arbitrary-precision
+arithmetic; in practice it is the cleanest single-number criterion for
+a claim of periodicity.
+
+What the margin means. All four orbits close at
+$R \in [4.2\times 10^{-49}, 5.3\times 10^{-48}]$ under heyoka and
+$R \in [8.4\times 10^{-51}, 4.3\times 10^{-50}]$ under mpmath,
+i.e.\ $17$--$20$ orders of magnitude below the gate. This margin
+means the residuals are not ``close to'' the gate or to either code's
+floor: they are so far below that the dominant source of the residual
+is likely finite-digit truncation in the initial conditions
+themselves rather than any integrator artefact. Equivalently: there
+is no double-precision follow-on integration, however long, that can
+distinguish these orbits from genuinely periodic solutions in any
+observable quantity.
 
 \end{document}

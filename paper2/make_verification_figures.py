@@ -689,7 +689,9 @@ def fig_syzygy_word_comparison(mode):
 # =============================================================================
 def fig_hp_dual_tool_residuals(mode):
     s = style(mode)
-    fig, ax = plt.subplots(figsize=(7.6, 4.8) if mode == "paper" else (9.6, 5.8))
+    fig, ax = plt.subplots(
+        figsize=(7.8, 4.6) if mode == "paper" else (9.6, 5.6)
+    )
     fig.patch.set_facecolor(s["bg"])
     ax.set_facecolor(s["bg"] if mode == "blog" else "white")
 
@@ -698,75 +700,121 @@ def fig_hp_dual_tool_residuals(mode):
 
     names = ORBIT_ORDER
     x = np.arange(len(names))
-    w = 0.36
+    w = 0.38
     hey_res = np.array([hey[k]["residual"] for k in names])
     mp_res = np.array([mp[k]["residual"] for k in names])
 
+    # Muted professional palette: blue for heyoka, orange for mpmath.
     if mode == "paper":
-        hey_color = "#1f77b4"
-        mp_color = "#2ca02c"
+        hey_color = "#3b6fa8"  # muted blue
+        mp_color = "#d08a3a"   # muted orange
+        text_color = "#222"
     else:
-        hey_color = "#00aeff"
-        mp_color = "#b8e838"
+        hey_color = "#5ea8de"
+        mp_color = "#ecb46a"
+        text_color = s["text"]
 
     log_hey = np.log10(hey_res)
     log_mp = np.log10(mp_res)
 
     bars1 = ax.bar(
-        x - w / 2, log_hey, w, color=hey_color, alpha=0.9,
-        edgecolor="white" if mode == "paper" else s["text"], linewidth=0.5,
-        label="heyoka 200-bit (Taylor HP)",
+        x - w / 2, log_hey, w,
+        color=hey_color, alpha=0.92,
+        edgecolor="white" if mode == "paper" else s["text"],
+        linewidth=0.6,
+        label="heyoka (200-bit MPFR Taylor)",
+        zorder=3,
     )
     bars2 = ax.bar(
-        x + w / 2, log_mp, w, color=mp_color, alpha=0.9,
-        edgecolor="white" if mode == "paper" else s["text"], linewidth=0.5,
-        label="mpmath Taylor 30 dps",
+        x + w / 2, log_mp, w,
+        color=mp_color, alpha=0.92,
+        edgecolor="white" if mode == "paper" else s["text"],
+        linewidth=0.6,
+        label="mpmath (Taylor, 30 dps)",
+        zorder=3,
     )
+
+    # Axis range: cover values (all between 10^-50 and 10^-48)
+    # and leave room above for the gate line + labels.
+    y_min = -52.0
+    y_max = -25.0
+    ax.set_ylim(y_min, y_max)
+
+    # Major ticks at nice log-scale positions.
+    major_ticks = [-50, -45, -40, -35, -30, -25]
+    ax.set_yticks(major_ticks)
+    ax.set_yticklabels([rf"$10^{{{t}}}$" for t in major_ticks])
+    ax.tick_params(axis="y", which="major", length=4, width=0.7)
+    ax.tick_params(axis="y", which="minor", length=0)  # minor ticks off
+    ax.tick_params(axis="x", length=0)
+
+    # Annotate each bar with its numerical value, above the bar
+    # (remember: bars grow negative, so "above" means toward less-negative y).
+    label_fs = 8 if mode == "paper" else 9
+    for b, v in zip(bars1, hey_res):
+        ax.text(
+            b.get_x() + b.get_width() / 2,
+            b.get_height() + 0.6,
+            f"{v:.2e}",
+            ha="center", va="bottom",
+            fontsize=label_fs,
+            color=text_color,
+        )
+    for b, v in zip(bars2, mp_res):
+        ax.text(
+            b.get_x() + b.get_width() / 2,
+            b.get_height() + 0.6,
+            f"{v:.2e}",
+            ha="center", va="bottom",
+            fontsize=label_fs,
+            color=text_color,
+        )
 
     # Gate line at 1e-30
     gate = np.log10(1e-30)
-    ax.axhline(gate, color=s["highlight"], lw=1.4, linestyle="--", alpha=0.9)
-    ax.text(
-        len(names) - 0.5, gate + 0.4,
-        "publication gate:  $10^{-30}$",
-        ha="right", va="bottom",
-        fontsize=9 if mode == "paper" else 10,
-        color=s["highlight"], fontweight="bold",
+    ax.axhline(
+        gate,
+        color="#9b1b1b" if mode == "paper" else s["highlight"],
+        lw=1.3, linestyle="--", alpha=0.9, zorder=2,
     )
-
-    # Annotate each bar with value
-    for bset, vals, off in [(bars1, hey_res, 0), (bars2, mp_res, 0)]:
-        for b, v in zip(bset, vals):
-            ax.text(
-                b.get_x() + b.get_width() / 2,
-                b.get_height() - 0.7,
-                f"{v:.1e}",
-                ha="center", va="top",
-                fontsize=7.5 if mode == "paper" else 8.5,
-                color=s["text"] if mode == "blog" else "#222",
-                rotation=90,
-            )
+    ax.text(
+        len(names) - 0.45, gate + 0.35,
+        r"gate ($10^{-30}$)",
+        ha="right", va="bottom",
+        fontsize=10 if mode == "paper" else 11,
+        color="#9b1b1b" if mode == "paper" else s["highlight"],
+        fontweight="bold",
+    )
 
     ax.set_xticks(x)
-    ax.set_xticklabels(names, fontsize=11, color=s["text"] if mode == "blog" else "#222")
-    ax.set_ylabel(r"$\log_{10}\|R\|$", color=s["text"] if mode == "blog" else "#222")
-    ax.set_xlabel("Orbit", color=s["text"] if mode == "blog" else "#222")
-    ax.set_ylim(min(log_hey.min(), log_mp.min()) - 2, gate + 4)
-    ax.invert_yaxis()  # lower residuals higher on the chart visually? Actually keep natural.
-    ax.invert_yaxis()  # revert — natural log-residual axis
+    ax.set_xticklabels(
+        [f"Orbit {n}" for n in names],
+        fontsize=12 if mode == "paper" else 13,
+        color=text_color,
+    )
+    ax.set_ylabel(
+        r"closure residual $\|R\|$",
+        color=text_color,
+        fontsize=12 if mode == "paper" else 13,
+    )
     ax.set_title(
-        "Dual-tool high-precision closure residuals (all orbits pass 1e-30 gate)",
-        color=s["text"] if mode == "blog" else "#111",
+        "High-precision closure residual, two independent integrators",
+        color="#111" if mode == "paper" else s["text"],
         fontweight="bold",
-        fontsize=11,
+        fontsize=12 if mode == "paper" else 13,
         pad=10,
     )
-    ax.legend(
-        frameon=False, loc="upper right", fontsize=9,
-        labelcolor=s["text"] if mode == "blog" else "#222",
+    leg = ax.legend(
+        frameon=False,
+        loc="lower left",
+        fontsize=10 if mode == "paper" else 11,
+        labelcolor=text_color,
     )
-    ax.grid(True, axis="y", alpha=0.25, linewidth=0.4)
-    ax.tick_params(colors=s["mute"])
+
+    ax.grid(True, axis="y", alpha=0.3, linewidth=0.4, zorder=1)
+    ax.tick_params(colors=s["mute"] if mode == "blog" else "#444")
+    for spine in ("top", "right"):
+        ax.spines[spine].set_visible(False)
 
     plt.tight_layout()
     save_both(fig, "hp_dual_tool_residuals", mode)
