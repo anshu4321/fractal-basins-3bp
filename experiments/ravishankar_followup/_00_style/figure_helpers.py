@@ -5,7 +5,6 @@ the correct stylesheet applied, and `save_both(fig, stem, outdir)` to emit
 both `<stem>_paper.pdf` and `<stem>_blog.png` in one call.
 """
 from pathlib import Path
-import matplotlib as mpl
 import matplotlib.pyplot as plt
 from .palette import ORBIT, BODY, COM_COLOR, SEQ_CMAP, SEQ_CMAP_FALLBACK
 
