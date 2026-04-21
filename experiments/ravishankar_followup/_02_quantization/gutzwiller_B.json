@@ -1,0 +1,40 @@
+{
+  "name": "B",
+  "E0": -1.5704505900213006,
+  "T": 32.84907116713965,
+  "S": 103.1756863921725,
+  "nu_mod_2": 1,
+  "lambda_dominant_complex_real": -4.04028001796338,
+  "lambda_dominant_complex_imag": 0.0,
+  "lambda_max_magnitude": 4.04028001796338,
+  "stability_exponent_s_per_period": 1.3963140009482105,
+  "lyapunov_per_unit_time": 0.04250695533653335,
+  "gutzwiller_contributions_per_repetition": [
+    {
+      "r": 1,
+      "det_M_minus_I": 6.287787615346217,
+      "amplitude_1_over_sqrt_det": 0.3987962519791275
+    },
+    {
+      "r": 2,
+      "det_M_minus_I": 14.385122634316394,
+      "amplitude_1_over_sqrt_det": 0.26365937343715823
+    },
+    {
+      "r": 3,
+      "det_M_minus_I": 67.9681382920046,
+      "amplitude_1_over_sqrt_det": 0.12129623279730396
+    },
+    {
+      "r": 4,
+      "det_M_minus_I": 264.4722437415874,
+      "amplitude_1_over_sqrt_det": 0.06149077265242978
+    },
+    {
+      "r": 5,
+      "det_M_minus_I": 1078.6082482566926,
+      "amplitude_1_over_sqrt_det": 0.030448656264920385
+    }
+  ],
+  "note": "Full Gutzwiller trace-formula amplitude for r-th repetition is T_p / (\u03c0\u210f) \u00d7 cos(r S_p/\u210f \u2212 r \u03bd_p \u03c0/2) \u00d7 amplitude_1_over_sqrt_det. With \u03bd_p known only mod 2, phases have \u00b1\u03c0/2 uncertainty per repetition."
+}
