@@ -1,0 +1,36 @@
+{
+  "A": {
+    "nu_mod_2": 0,
+    "rationale": "hyperbolic: \u03bb_dom = +43.779076 (+), \u03bd mod 2 = 0",
+    "lambda_dominant_real": 43.77907604848555,
+    "lambda_dominant_imag": 0.0,
+    "nu_full_pending": true,
+    "note": "Full Conley-Zehnder winding computation deferred to a follow-up task; this is the mod-2 answer only."
+  },
+  "B": {
+    "nu_mod_2": 1,
+    "rationale": "hyperbolic: \u03bb_dom = -4.040280 (-), \u03bd mod 2 = 1",
+    "lambda_dominant_real": -4.04028001796338,
+    "lambda_dominant_imag": 0.0,
+    "nu_full_pending": true,
+    "note": "Full Conley-Zehnder winding computation deferred to a follow-up task; this is the mod-2 answer only."
+  },
+  "C": {
+    "nu_mod_2": 1,
+    "rationale": "elliptic: sum(|arg|)/\u03c0 = 0.8614, \u03bd mod 2 \u2248 1 (rounding)",
+    "arg_nontrivial_1_pi": 0.5443208546404836,
+    "arg_nontrivial_2_pi": 0.3170869301854391,
+    "nu_approx_lower_bound": 0.8614077848259227,
+    "nu_full_pending": true,
+    "note": "Full Conley-Zehnder winding computation deferred to a follow-up task; this is the mod-2 answer only."
+  },
+  "D": {
+    "nu_mod_2": 0,
+    "rationale": "elliptic: sum(|arg|)/\u03c0 = 0.4239, \u03bd mod 2 \u2248 0 (rounding)",
+    "arg_nontrivial_1_pi": 0.36597011884154257,
+    "arg_nontrivial_2_pi": 0.05791413257060137,
+    "nu_approx_lower_bound": 0.4238842514121439,
+    "nu_full_pending": true,
+    "note": "Full Conley-Zehnder winding computation deferred to a follow-up task; this is the mod-2 answer only."
+  }
+}
