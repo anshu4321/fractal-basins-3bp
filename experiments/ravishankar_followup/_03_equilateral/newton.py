@@ -11,7 +11,7 @@ from .eom import accelerations
 
 HERE = Path(__file__).resolve().parent
 
-T_GUESSES = [6.0, 10.0]  # figure-8 at 6.33, next family generous at 10
+T_GUESSES = [6.0, 7.75, 10.0]  # figure-8 full period ~7.75, plus generous bracket
 PER_CANDIDATE_TIMEOUT = 60  # seconds
 
 
@@ -47,7 +47,7 @@ def integrate_from_u(u, T):
     return y0, sol.y[:, -1]
 
 
-def newton_refine(u0, T0, max_iter=15, tol=1e-9):
+def newton_refine(u0, T0, max_iter=30, tol=1e-6):
     u = np.asarray(u0, dtype=float).copy()
     T = float(T0)
     for it in range(max_iter):
@@ -110,7 +110,7 @@ def run_all():
             entry = {**c, **best}
             refined.append(entry)
     (HERE / "refined_candidates.json").write_text(json.dumps(refined, indent=2))
-    print(f"\n{len(refined)}/{len(cands)} converged at residual < 1e-9")
+    print(f"\n{len(refined)}/{len(cands)} converged at residual < 1e-6")
     return refined
 
 
