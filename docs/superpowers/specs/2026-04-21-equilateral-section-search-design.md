@@ -159,6 +159,8 @@ Output: `topology_match_equilateral.json`.
 
 ## Outputs (artefacts)
 
+All figures and animations follow the shared aesthetics spec (`docs/superpowers/specs/2026-04-21-figure-aesthetics-design.md`). Every figure script imports from `experiments/ravishankar_followup/00_style/`.
+
 ```
 experiments/ravishankar_followup/03_equilateral/
 ├── section_definition.py          # Step 1 verification
@@ -180,14 +182,29 @@ experiments/ravishankar_followup/03_equilateral/
 ├── monodromy_equilateral.json
 ├── topology_match_equilateral.json
 ├── figures/
-│   ├── equilateral_basin.pdf
+│   ├── equilateral_basin_paper.pdf
 │   ├── equilateral_basin_blog.png
-│   ├── orbits_panel.pdf
-│   └── orbits_panel_blog.png
+│   ├── candidates_ld_scan_paper.pdf
+│   ├── candidates_ld_scan_blog.png
+│   ├── orbits_panel_equilateral_paper.pdf
+│   ├── orbits_panel_equilateral_blog.png
+│   ├── section_comparison_paper.pdf
+│   └── section_comparison_blog.png
+├── animations/
+│   ├── basin_reveal.gif / .mp4
+│   ├── ld_growth.gif / .mp4
+│   ├── equilateral_vs_euler.gif / .mp4
+│   └── new_orbit_<N>.gif / .mp4    # one per surviving HP-verified orbit
 ├── training_curves.pdf
 ├── RESULT.md
 └── section_text.tex
 ```
+
+**Animations** (per aesthetics spec, Thread-3 inventory):
+- `basin_reveal.gif` — 10-second column-by-column painting of the 256² basin, deck-friendly.
+- `ld_growth.gif` — 8-second snapshot loop of LD field at epochs 1/10/25/40/50 of classifier training.
+- `equilateral_vs_euler.gif` — 8-second morph from Euler configuration to equilateral configuration, illustrating section difference.
+- `new_orbit_<N>.gif` — one comet-tail loop per surviving HP-verified orbit; these become the "new orbit" assets for the paper and the deck.
 
 ## Acceptance criteria
 

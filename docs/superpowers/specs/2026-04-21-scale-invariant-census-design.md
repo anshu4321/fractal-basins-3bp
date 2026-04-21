@@ -105,20 +105,32 @@ This is purely analytic (rescaling), no re-integration.
 
 ## Outputs (artefacts)
 
+All figures and animations follow the shared aesthetics spec (`docs/superpowers/specs/2026-04-21-figure-aesthetics-design.md`). Every figure script imports from `experiments/ravishankar_followup/00_style/`. Static figures emit `_paper.pdf` + `_blog.png` via `save_both()`.
+
 ```
 experiments/ravishankar_followup/01_census/
 ├── run_census.py                 # produces everything
 ├── hristov_2024_invariants.json  # (E, T⋆, word_length) per entry
 ├── figures/
-│   ├── census_scatter.pdf
+│   ├── census_scatter_paper.pdf
 │   ├── census_scatter_blog.png
-│   ├── census_density.pdf
+│   ├── census_density_paper.pdf
 │   ├── census_density_blog.png
-│   ├── scaling_families.pdf
+│   ├── scaling_families_paper.pdf
 │   └── scaling_families_blog.png
+├── animations/                   # GIFs + MP4s per aesthetics spec
+│   ├── alpha_sweep_A.gif / .mp4
+│   ├── alpha_sweep_B.gif / .mp4
+│   ├── alpha_sweep_C.gif / .mp4
+│   ├── alpha_sweep_D.gif / .mp4
+│   └── census_flyover.gif / .mp4
 ├── RESULT.md                     # numerical summary tables
 └── section_text.tex              # LaTeX fragment for follow-up paper
 ```
+
+**Animations** (per aesthetics spec, Thread-1 inventory):
+- `alpha_sweep_{A,B,C,D}.gif` — 6-second loops of each orbit rescaling over α ∈ [0.3, 3], with live readout of T(α), E(α), T⋆ (constant).
+- `census_flyover.gif` — 8-second (E, T⋆)-plane reveal, bin-by-bin, with A/B/C/D marker-grow at the end.
 
 ## Acceptance criteria
 

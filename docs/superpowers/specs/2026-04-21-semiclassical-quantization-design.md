@@ -145,6 +145,8 @@ Tables: action values per orbit; Maslov indices; first 10 BS levels for C and D;
 
 ## Outputs (artefacts)
 
+All figures and animations follow the shared aesthetics spec (`docs/superpowers/specs/2026-04-21-figure-aesthetics-design.md`). Every figure script imports from `experiments/ravishankar_followup/00_style/`.
+
 ```
 experiments/ravishankar_followup/02_quantization/
 ├── run_monodromy_CD.py           # Step 1
@@ -160,13 +162,29 @@ experiments/ravishankar_followup/02_quantization/
 ├── gutzwiller_A.json
 ├── gutzwiller_B.json
 ├── figures/
-│   ├── gutzwiller_AB.pdf
+│   ├── action_vs_energy_paper.pdf
+│   ├── action_vs_energy_blog.png
+│   ├── bs_spectrum_CD_paper.pdf
+│   ├── bs_spectrum_CD_blog.png
+│   ├── gutzwiller_AB_paper.pdf
 │   ├── gutzwiller_AB_blog.png
-│   ├── bs_spectrum_CD.pdf
-│   └── bs_spectrum_CD_blog.png
+│   ├── monodromy_circle_paper.pdf
+│   └── monodromy_circle_blog.png
+├── animations/
+│   ├── gutzwiller_sweep.gif / .mp4
+│   ├── monodromy_dance_AB.gif / .mp4
+│   ├── orbit_trail_A.gif / .mp4
+│   ├── orbit_trail_B.gif / .mp4
+│   ├── orbit_trail_C.gif / .mp4
+│   └── orbit_trail_D.gif / .mp4
 ├── RESULT.md                     # cross-orbit summary table
 └── section_text.tex
 ```
+
+**Animations** (per aesthetics spec, Thread-2 inventory):
+- `gutzwiller_sweep.gif` — 10-second draw-in of ρ^osc(E) for A vs B, amplitude contrast visible as pulsation difference.
+- `monodromy_dance_AB.gif` — 6-second loop of Floquet-eigenvalue migration in the complex plane over t ∈ [0, T], supporting the Maslov exposition.
+- `orbit_trail_{A,B,C,D}.gif` — 8-second comet-tail loops per orbit; reusable in the deck and follow-up paper.
 
 ## Acceptance criteria
 
