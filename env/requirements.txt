@@ -1,0 +1,13 @@
+jax[cuda12]
+equinox
+optax
+diffrax
+numpy
+scipy
+pandas
+pyarrow
+matplotlib
+pytest
+tqdm
+cmcrameri
+imageio-ffmpeg
