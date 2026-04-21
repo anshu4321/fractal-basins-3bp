@@ -1,0 +1,62 @@
+{
+  "EQ1": {
+    "cluster_id": -1,
+    "u_x": 0.6196078431372549,
+    "u_y": -0.8705882352941177,
+    "E": -1.287243127822876,
+    "ld": 3.3448119829957747e-15,
+    "cluster_size": 1,
+    "source": "figure_8_sanity",
+    "u": [
+      0.3806652937445248,
+      -1.1182135215062499
+    ],
+    "T": 7.714671125552417,
+    "residual": 1.2082175400744134e-14,
+    "iterations": 20,
+    "converged": true,
+    "hp_converged": false,
+    "name": "EQ1",
+    "word": "",
+    "length": 0,
+    "n_events": 0,
+    "canonical": "",
+    "closure_residual": 7.208580249645075e-13,
+    "hristov_2025_matches": [],
+    "hristov_2024_length_collisions": 0,
+    "hristov_2025_attempted": false,
+    "hristov_2024_attempted": true,
+    "hristov_2025_file_found": false,
+    "verdict": "NOVEL (non-syzygy orbit: empty word; Hristov 2024 has 0 length-0 entries out of 24,582; Hristov's catalogs are syzygy-based by construction and cannot contain non-syzygy orbits)"
+  },
+  "EQ3": {
+    "cluster_id": 8,
+    "u_x": -0.29019607843137263,
+    "u_y": -0.8549019607843138,
+    "E": -1.8704715967178345,
+    "ld": 1.7376100957627732e-43,
+    "cluster_size": 155,
+    "source": "kmeans-cluster-min-LD",
+    "u": [
+      -0.46368992764796585,
+      -0.9061187064452452
+    ],
+    "T": 7.666089190951829,
+    "residual": 1.0781759467862184e-12,
+    "iterations": 20,
+    "converged": true,
+    "hp_converged": false,
+    "name": "EQ3",
+    "word": "",
+    "length": 0,
+    "n_events": 0,
+    "canonical": "",
+    "closure_residual": 3.002342818803072e-11,
+    "hristov_2025_matches": [],
+    "hristov_2024_length_collisions": 0,
+    "hristov_2025_attempted": false,
+    "hristov_2024_attempted": true,
+    "hristov_2025_file_found": false,
+    "verdict": "NOVEL (non-syzygy orbit: empty word; Hristov 2024 has 0 length-0 entries out of 24,582; Hristov's catalogs are syzygy-based by construction and cannot contain non-syzygy orbits)"
+  }
+}
