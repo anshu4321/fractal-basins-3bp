@@ -59,3 +59,18 @@ def test_T_star_hristov_catalog_cross_check():
     # normalisation (e.g., may rescale so E = -1 per their paper convention).
     # We only check the computed T* is positive and finite.
     assert T_star > 0 and np.isfinite(T_star)
+
+
+def test_compute_all_invariants_returns_records():
+    from experiments.ravishankar_followup._01_census.compute_invariants import (
+        compute_all_invariants,
+    )
+    records = compute_all_invariants(max_entries=100)
+    assert len(records) == 100
+    assert all(isinstance(r["E"], float) for r in records)
+    # Hristov orbits are bound: E < 0 for all reasonable entries
+    assert all(r["E"] < 0 for r in records[:10])
+    assert all(r["T_star"] > 0 for r in records)
+    assert all("word_len" in r for r in records)
+    assert all("T_star_hristov" in r for r in records)
+    assert all(r["row"] >= 1 for r in records)  # 1-based indexing
