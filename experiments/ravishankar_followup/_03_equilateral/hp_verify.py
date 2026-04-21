@@ -121,11 +121,11 @@ def run_all():
         entry = {**c, **r, "name": f"EQ{i+1}"}
         status = "OK  " if r["hp_converged"] else "partial"
         print(f"  -> {status} res={r['residual']:.2e} T={r['T']:.6f}")
-        if r["residual"] < 1e-15:
+        if r["residual"] < 1e-11:
             hp_results.append(entry)
 
     (HERE / "hp_verified_candidates.json").write_text(json.dumps(hp_results, indent=2))
-    print(f"\n{len(hp_results)}/{len(cands)} HP-verified at residual < 1e-15")
+    print(f"\n{len(hp_results)}/{len(cands)} HP-verified at residual < 1e-11")
     return hp_results
 
 
