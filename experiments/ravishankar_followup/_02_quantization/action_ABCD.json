@@ -1,0 +1,26 @@
+{
+  "A": {
+    "S_trapezoidal": 59.94826336255577,
+    "S_gauss_legendre": 59.94826336255538,
+    "S": 59.94826336255538,
+    "rel_error_between_methods": 6.518929536033131e-15
+  },
+  "B": {
+    "S_trapezoidal": 103.17568639217292,
+    "S_gauss_legendre": 103.1756863921725,
+    "S": 103.1756863921725,
+    "rel_error_between_methods": 4.1320359123717315e-15
+  },
+  "C": {
+    "S_trapezoidal": 105.43077929418756,
+    "S_gauss_legendre": 105.43077929418767,
+    "S": 105.43077929418767,
+    "rel_error_between_methods": 1.0783078573704852e-15
+  },
+  "D": {
+    "S_trapezoidal": 152.32455673824313,
+    "S_gauss_legendre": 152.32455673824387,
+    "S": 152.32455673824387,
+    "rel_error_between_methods": 4.851249601601326e-15
+  }
+}
