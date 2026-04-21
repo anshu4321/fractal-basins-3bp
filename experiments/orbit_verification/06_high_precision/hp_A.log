@@ -1,0 +1,2 @@
+[A] start dps=20 order=20 n_steps=4000 max_iter=4
+[A] iter 0: ||F|| = 1.911273335e-12 (535s)
