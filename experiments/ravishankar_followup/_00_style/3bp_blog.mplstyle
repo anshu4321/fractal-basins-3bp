@@ -1,0 +1,32 @@
+figure.figsize      : 8.0, 5.33
+figure.dpi          : 150
+savefig.dpi         : 300
+savefig.bbox        : tight
+savefig.pad_inches  : 0.1
+savefig.format      : png
+savefig.transparent : False
+
+font.family         : sans-serif
+font.sans-serif     : Inter, SF Pro Text, Helvetica Neue, DejaVu Sans
+mathtext.fontset    : cm
+text.usetex         : False
+
+axes.labelsize      : 14
+axes.titlesize      : 16
+xtick.labelsize     : 12
+ytick.labelsize     : 12
+legend.fontsize     : 12
+
+axes.linewidth      : 1.0
+axes.grid           : False
+axes.spines.top     : False
+axes.spines.right   : False
+
+lines.linewidth     : 2.0
+lines.markeredgewidth : 0.7
+lines.markeredgecolor : black
+lines.markersize    : 8
+
+legend.frameon      : False
+
+image.cmap          : viridis
