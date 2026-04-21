@@ -31,7 +31,11 @@ def load_hp_ic(name):
         else:
             entry = next((r for r in hp if r.get("name") == name), None)
         if entry is not None:
-            return float(entry["v1"]), float(entry["v2"]), float(entry["T"])
+            # HP file uses v1_HP/v2_HP/T_HP keys; fall back to v1/v2/T for other sources
+            v1 = entry.get("v1_HP") or entry.get("ic_v1_double") or entry["v1"]
+            v2 = entry.get("v2_HP") or entry.get("ic_v2_double") or entry["v2"]
+            T  = entry.get("T_HP")  or entry.get("ic_T_double")  or entry["T"]
+            return float(v1), float(v2), float(T)
 
     # --- source 2: monodromy results (always present, has v1/v2/T) ---
     mono_path = ROOT / "experiments/orbit_verification/11_monodromy/monodromy_results.json"
